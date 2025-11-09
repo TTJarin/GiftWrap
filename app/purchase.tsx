@@ -234,19 +234,27 @@ export default function PurchaseScreen() {
 
         {showBreakdown && (
           <View style={[styles.box, { padding: scale(12), marginBottom: verticalScale(12), width: '90%' }]}>
+            <View style={styles.breakdownHeader}>
+              <Text style={styles.breakdownHeaderText}>Item</Text>
+              <View style={styles.breakdownHeaderRight}>
+                <Text style={styles.breakdownHeaderText}>Price</Text>
+                <Text style={styles.breakdownHeaderText}>Qty</Text>
+                <Text style={styles.breakdownHeaderText}>Total</Text>
+              </View>
+            </View>
             {purchasedItems.map((item, idx) => {
               const subtotal = item.price * item.qty;
               return (
                 <View key={idx} style={[styles.itemRow, { paddingVertical: verticalScale(10) }]}>
                   <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
-                  <Text style={[styles.itemSubtotal, { width: scale(100), textAlign: 'right' }]}>{formatPrice(subtotal)}</Text>
+                  <View style={styles.breakdownValues}>
+                    <Text style={styles.breakdownText}>{formatPrice(item.price)}</Text>
+                    <Text style={styles.breakdownText}>x {item.qty}</Text>
+                    <Text style={[styles.itemSubtotal, { width: scale(80), textAlign: 'right' }]}>{formatPrice(subtotal)}</Text>
+                  </View>
                 </View>
               );
             })}
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.totalAmount}>{formatPrice(purchasedItems.reduce((s, i) => s + i.price * i.qty, 0))}</Text>
-            </View>
           </View>
         )}
       </ScrollView>
@@ -258,18 +266,6 @@ export default function PurchaseScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Bottom Navigation */}
-      <View style={styles.nav}>
-        <TouchableOpacity onPress={() => router.push('/homepage')}>
-          <Ionicons name="home" size={scale(28)} color="gray" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push('/cart')}>
-          <Ionicons name="cart" size={scale(28)} color="#D50000" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push('/profile')}>
-          <Ionicons name="person" size={scale(28)} color="gray" />
-        </TouchableOpacity>
-      </View>
     </KeyboardAvoidingView>
   );
 }
@@ -297,6 +293,35 @@ const styles = StyleSheet.create({
   totalAmount: { fontWeight: '900', color: '#D50000', fontSize: scaleFont(16) },
   qtyBtn: { width: scale(28), height: scale(28), borderRadius: scale(6), alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#ccc', marginHorizontal: scale(6), backgroundColor: '#FFF3E0' },
   qtyValue: { minWidth: scale(28), textAlign: 'center', color: '#000', fontSize: scaleFont(14) },
-  nav: { position: 'absolute', bottom: verticalScale(30), left: 0, right: 0, backgroundColor: '#fff', flexDirection: 'row', justifyContent: 'space-around', paddingVertical: verticalScale(12), borderTopWidth: 1, borderColor: '#ccc', borderTopLeftRadius: scale(15), borderTopRightRadius: scale(15) },
-  stickyButtonWrapper: { position: 'absolute', bottom: verticalScale(90), left: scale(20), right: scale(20), alignItems: 'center' },
+  stickyButtonWrapper: { position: 'absolute', bottom: verticalScale(20), left: scale(20), right: scale(20), alignItems: 'center' },
+  breakdownHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    paddingBottom: verticalScale(8),
+    borderBottomWidth: 1,
+    borderColor: '#D50000',
+    marginBottom: verticalScale(8),
+  },
+  breakdownHeaderText: { 
+    fontWeight: '700',
+    color: '#D50000',
+    fontSize: scaleFont(14),
+  },
+  breakdownHeaderRight: { 
+    flexDirection: 'row',
+    width: scale(200),
+    justifyContent: 'space-between',
+  },
+  breakdownValues: { 
+    flexDirection: 'row',
+    width: scale(200),
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  breakdownText: { 
+    color: '#333',
+    fontSize: scaleFont(14),
+    width: scale(60),
+    textAlign: 'center',
+  },
 });

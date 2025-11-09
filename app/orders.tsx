@@ -4,14 +4,14 @@ import { getAuth } from 'firebase/auth';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import {
+  KeyboardAvoidingView,
+  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { db } from '../firebaseConfig';
 
@@ -115,22 +115,11 @@ export default function OrdersScreen() {
                 </View>
               ))
             ) : (
-              <Text style={{ color: '#fff', marginTop: 20 }}>No orders found</Text>
+              <Text style={{ color: '#fff', marginTop: 20, fontSize: 16, textAlign: 'center' }}>No orders found</Text>
             )}
           </ScrollView>
         </SafeAreaView>
 
-        <View style={styles.nav}>
-          <TouchableOpacity onPress={() => router.push('/homepage')}>
-            <Ionicons name="home" size={28} color="#808080" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/cart')}>
-            <Ionicons name="cart" size={28} color="#808080" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/profile')}>
-            <Ionicons name="person" size={28} color="gray" />
-          </TouchableOpacity>
-        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -140,13 +129,14 @@ const styles = StyleSheet.create({
   wrapper: { flex: 1, backgroundColor: '#D50000' },
   safeArea: { 
     flex: 1, 
-    paddingTop: Platform.OS === 'android' ? 30 : 0, // ✅ fix for top spacing
+    paddingTop: Platform.OS === 'android' ? 50 : 20, // increased padding for lower header
   },
   headerRow: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     paddingHorizontal: 20, 
-    marginBottom: 10, 
+    marginTop: 20,
+    marginBottom: 20, 
   },
   title: { 
     color: 'white', 
@@ -169,19 +159,5 @@ const styles = StyleSheet.create({
     fontSize: 14, 
     color: '#333', 
     marginBottom: 4 
-  },
-  nav: { 
-    position: 'absolute', 
-    bottom: 30,
-    left: 0, 
-    right: 0, 
-    backgroundColor: '#fff', 
-    flexDirection: 'row', 
-    justifyContent: 'space-around', 
-    paddingVertical: 12, 
-    borderTopWidth: 1, 
-    borderColor: '#ccc',
-    borderTopLeftRadius: 15,
-    borderTopRightRadius: 15,
   },
 });

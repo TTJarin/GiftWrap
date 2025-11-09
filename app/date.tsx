@@ -149,17 +149,6 @@ export default function MyDatesScreen() {
           </ScrollView>
 
           {/* Custom Bottom Nav */}
-          <View style={[styles.nav, { paddingVertical: verticalScale(12), borderTopLeftRadius: scale(15), borderTopRightRadius: scale(15) }]}>
-            <TouchableOpacity onPress={() => router.push('/homepage')}>
-              <Ionicons name="home" size={scaleFont(28)} color="#808080" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push('/cart')}>
-              <Ionicons name="cart" size={scaleFont(28)} color="#808080" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push('/profile')}>
-              <Ionicons name="person" size={scaleFont(28)} color="gray" />
-            </TouchableOpacity>
-          </View>
         </SafeAreaView>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
@@ -199,17 +188,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#D50000',
   },
-  nav: {
-    position: 'absolute',
-    bottom: verticalScale(30),
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    borderTopWidth: 1,
-    borderColor: '#ccc',
-  },
+
   errorText: {
     color: '#fff',
     backgroundColor: '#D50000',

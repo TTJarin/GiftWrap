@@ -206,17 +206,7 @@ export default function CalendarScreen() {
       </Modal>
 
       {/* Navigation bar */}
-      <View style={[styles.nav, { paddingVertical: verticalScale(12), borderTopLeftRadius: scale(15), borderTopRightRadius: scale(15) }]}>
-        <TouchableOpacity onPress={() => router.push('/homepage')}>
-          <Ionicons name="home" size={scaleFont(28)} color="#808080" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push('/cart')}>
-          <Ionicons name="cart" size={scaleFont(28)} color="#808080" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push('/profile')}>
-          <Ionicons name="person" size={scaleFont(28)} color="gray" />
-        </TouchableOpacity>
-      </View>
+      
     </View>
   );
 }

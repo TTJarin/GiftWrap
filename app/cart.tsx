@@ -105,14 +105,16 @@ export default function Cart() {
           data={cart}
           keyExtractor={(_, i) => i.toString()}
           renderItem={renderItem}
-          contentContainerStyle={{ padding: 20, paddingBottom: 120 }}
+          contentContainerStyle={{ padding: 20, paddingBottom: 200 }}
         />
       )}
 
       {cart.length > 0 && (
-        <TouchableOpacity style={styles.button} onPress={handleCheckout}>
-          <Text style={styles.buttonText}>Check Out</Text>
-        </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.button} onPress={handleCheckout}>
+            <Text style={styles.buttonText}>Check Out</Text>
+          </TouchableOpacity>
+        </View>
       )}
     </View>
   );
@@ -152,13 +154,20 @@ const styles = StyleSheet.create({
   qtyRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 10 },
   qtyBtn: { fontSize: 20, fontWeight: 'bold', color: '#d0021b', paddingHorizontal: 10 },
   qtyValue: { fontSize: 16, fontWeight: '600' },
+  buttonContainer: {
+    position: 'absolute',
+    bottom: 120,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    backgroundColor: 'transparent',
+  },
   button: {
     backgroundColor: '#FFF3E0',
     padding: 15,
     borderRadius: 10,
-    margin: 20,
-    bottom: 40,
     alignItems: 'center',
+    width: '100%',
   },
   buttonText: { color: '#d0021b', textAlign: 'center', fontWeight: 'bold', fontSize: 16 },
 });

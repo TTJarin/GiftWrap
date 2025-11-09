@@ -185,19 +185,6 @@ export default function HomeScreen() {
             <ScaledText size={14} style={{ color: '#fff', marginTop: verticalScale(20) }}>No products found</ScaledText>
           )}
         </ScrollView>
-
-        {/* Bottom Navigation */}
-        <View style={styles.nav}>
-          <TouchableOpacity onPress={() => router.push('/homepage')}>
-            <Ionicons name="home" size={scaleFont(28)} color="#D50000" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/cart')}>
-            <Ionicons name="cart" size={scaleFont(28)} color="gray" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/profile')}>
-            <Ionicons name="person" size={scaleFont(28)} color="gray" />
-          </TouchableOpacity>
-        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

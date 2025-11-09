@@ -94,11 +94,12 @@ export default function ProductScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
           <ScrollView contentContainerStyle={styles.centeredScroll}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={scaleFont(28)} color="#fff" />
-            </TouchableOpacity>
-
-            <ScaledText size={scaleFont(28)} style={styles.appTitle}>GiftWrap</ScaledText>
+            <View style={styles.titleRow}>
+              <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                <Ionicons name="arrow-back" size={24} color="#FFF3E0" />
+              </TouchableOpacity>
+              <ScaledText size={24} style={styles.title}>GiftWrap</ScaledText>
+            </View>
 
             <Image
               source={{ uri: product.productsImages?.[0] || product.picture || 'https://via.placeholder.com/150' }}
@@ -114,7 +115,6 @@ export default function ProductScreen() {
             </TouchableOpacity>
           </ScrollView>
 
-          <BottomNav router={router} />
         </View>
       </SafeAreaView>
     );
@@ -137,11 +137,12 @@ export default function ProductScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <ScrollView contentContainerStyle={styles.centeredScroll}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={scaleFont(28)} color="#fff" />
-          </TouchableOpacity>
-
-          <ScaledText size={scaleFont(28)} style={styles.appTitle}>GiftWrap</ScaledText>
+          <View style={styles.titleRow}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color="#FFF3E0" />
+            </TouchableOpacity>
+            <ScaledText size={24} style={styles.title}>GiftWrap</ScaledText>
+          </View>
           <ScaledText size={scaleFont(18)} style={styles.categoryTitle}>{category ? `Category: ${category}` : 'All Products'}</ScaledText>
 
           <FlatList
@@ -155,26 +156,14 @@ export default function ProductScreen() {
           />
         </ScrollView>
 
-        <BottomNav router={router} />
+        
       </View>
     </SafeAreaView>
   );
 }
 
 // --- Bottom navigation ---
-const BottomNav = ({ router }: { router: any }) => (
-  <View style={styles.nav}>
-    <TouchableOpacity onPress={() => router.push('/homepage')}>
-      <Ionicons name="home" size={scaleFont(28)} color="#D50000" />
-    </TouchableOpacity>
-    <TouchableOpacity onPress={() => router.push('/cart')}>
-      <Ionicons name="cart" size={scaleFont(28)} color="gray" />
-    </TouchableOpacity>
-    <TouchableOpacity onPress={() => router.push('/profile')}>
-      <Ionicons name="person" size={scaleFont(28)} color="gray" />
-    </TouchableOpacity>
-  </View>
-);
+
 
 const LoadingScreen = () => (
   <SafeAreaView style={styles.safeArea}>
@@ -197,30 +186,120 @@ const NotFoundScreen = ({ router }: { router: any }) => (
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#D50000' },
-  container: { flex: 1, backgroundColor: '#D50000' },
-  centeredScroll: { alignItems: 'center', justifyContent: 'center', paddingVertical: verticalScale(60), paddingBottom: verticalScale(100) },
-  centeredFlatList: { alignItems: 'center', justifyContent: 'center', paddingBottom: verticalScale(120) },
+  container: { flex: 1, backgroundColor: '#D50000', alignItems: 'center' },
+  centeredScroll: { 
+    alignItems: 'center', 
+    justifyContent: 'flex-start',
+    paddingTop: 20,
+    paddingBottom: verticalScale(100),
+    width: '100%'
+  },
+  centeredFlatList: { 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    paddingBottom: verticalScale(100),
+    paddingHorizontal: scale(10)
+  },
   centerAll: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#D50000' },
-  backButton: { position: 'absolute', top: verticalScale(20), left: scale(20), zIndex: 1 },
-  appTitle: { color: 'white', fontWeight: 'bold', textAlign: 'center', marginBottom: verticalScale(10) },
-  categoryTitle: { color: 'white', textAlign: 'center', marginBottom: verticalScale(20) },
-  productCard: { backgroundColor: '#FFF3E0', width: '45%', alignItems: 'center', justifyContent: 'center', padding: scale(10), borderRadius: scale(10) },
-  productImage: { width: '100%', height: verticalScale(120), borderRadius: scale(8), marginBottom: verticalScale(8), backgroundColor: '#fff' },
-  productName: { fontWeight: 'bold', color: '#D50000', textAlign: 'center' },
-  productPrice: { color: '#D50000', marginVertical: verticalScale(2) },
-  productCategory: { color: '#888', textAlign: 'center', marginBottom: verticalScale(8) },
-  productDetailImage: { width: scale(180), height: verticalScale(180), borderRadius: scale(8), backgroundColor: '#fff', marginBottom: verticalScale(16) },
-  productDetailName: { fontWeight: 'bold', color: '#FFF3E0', textAlign: 'center', marginBottom: verticalScale(6) },
-  productDetailPrice: { color: '#FFF3E0', marginTop: verticalScale(5), textAlign: 'center' },
-  productDetailCategory: { color: '#FFF3E0', marginBottom: verticalScale(10), textAlign: 'center' },
-  productDetailDescription: { color: '#FFF3E0', marginBottom: verticalScale(16), textAlign: 'center', paddingHorizontal: scale(20) },
-  button: { backgroundColor: '#FFF3E0', alignItems: 'center', justifyContent: 'center', paddingVertical: verticalScale(10), paddingHorizontal: scale(20), borderRadius: scale(8), marginTop: verticalScale(10) },
-  buttonText: { color: '#D50000', fontWeight: 'bold' },
-  nav: {
-    position: 'absolute', bottom: verticalScale(10), left: 0, right: 0,
-    backgroundColor: '#FFF3E0', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center',
-    borderTopLeftRadius: scale(12), borderTopRightRadius: scale(12),
-    shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 5,
-    height: verticalScale(60),
+  titleRow: { 
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    paddingHorizontal: 20,
+    marginTop: 50,
+    marginBottom: 20
+  },
+  backButton: { 
+    padding: 6
+  },
+  title: {
+    color: '#FFF3E0',
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    flex: 1
+  },
+  categoryTitle: { color: 'white', textAlign: 'center', marginBottom: verticalScale(30) },
+  productCard: { 
+    backgroundColor: '#FFF3E0', 
+    width: '45%', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    padding: scale(15),
+    borderRadius: scale(10),
+    marginHorizontal: scale(5)
+  },
+  productImage: { 
+    width: '100%', 
+    height: verticalScale(120), 
+    borderRadius: scale(8), 
+    marginBottom: verticalScale(12), 
+    backgroundColor: '#fff' 
+  },
+  productName: { 
+    fontWeight: 'bold', 
+    color: '#D50000', 
+    textAlign: 'center',
+    fontSize: scaleFont(16),
+    marginBottom: verticalScale(4)
+  },
+  productPrice: { 
+    color: '#D50000', 
+    marginVertical: verticalScale(4),
+    fontSize: scaleFont(14)
+  },
+  productCategory: { 
+    color: '#888', 
+    textAlign: 'center', 
+    marginBottom: verticalScale(8),
+    fontSize: scaleFont(12)
+  },
+  productDetailImage: { 
+    width: scale(250), 
+    height: verticalScale(250), 
+    borderRadius: scale(12), 
+    backgroundColor: '#fff', 
+    marginBottom: verticalScale(24)
+  },
+  productDetailName: { 
+    fontWeight: 'bold', 
+    color: '#FFF3E0', 
+    textAlign: 'center', 
+    marginBottom: verticalScale(12),
+    width: '90%'
+  },
+  productDetailPrice: { 
+    color: '#FFF3E0', 
+    marginTop: verticalScale(8), 
+    textAlign: 'center',
+    fontSize: scaleFont(20)
+  },
+  productDetailCategory: { 
+    color: '#FFF3E0', 
+    marginVertical: verticalScale(12), 
+    textAlign: 'center' 
+  },
+  productDetailDescription: { 
+    color: '#FFF3E0', 
+    marginBottom: verticalScale(24), 
+    textAlign: 'center', 
+    paddingHorizontal: scale(25),
+    width: '90%',
+    lineHeight: verticalScale(22)
+  },
+  button: { 
+    backgroundColor: '#FFF3E0', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    paddingVertical: verticalScale(12), 
+    paddingHorizontal: scale(25), 
+    borderRadius: scale(8), 
+    marginTop: verticalScale(10),
+    width: '80%'
+  },
+  buttonText: { 
+    color: '#D50000', 
+    fontWeight: 'bold',
+    fontSize: scaleFont(16)
   },
 });

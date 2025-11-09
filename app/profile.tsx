@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { getAuth } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -6,12 +5,11 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { db } from '../firebaseConfig';
@@ -89,7 +87,9 @@ export default function ProfileScreen() {
 
           {/* User Info */}
           {loading ? (
-            <ActivityIndicator size="large" color="#fff" style={{ marginVertical: verticalScale(30) }} />
+            <View style={{ height: verticalScale(200), justifyContent: 'center' }}>
+              <ActivityIndicator size="large" color="#fff" />
+            </View>
           ) : user ? (
             <>
               <Text style={styles.name}>{user.name || 'No Name'}</Text>
@@ -103,28 +103,16 @@ export default function ProfileScreen() {
           {/* Buttons */}
           {['My Orders', 'Calendar'].map((item: string, index: number) => (
             <TouchableOpacity key={index} style={styles.button} onPress={() => navigateTo(item)}>
-              <Text style={{ fontSize: scaleFont(16) }}>{item}</Text>
+              <Text style={styles.buttonText}>{item}</Text>
             </TouchableOpacity>
           ))}
 
           {/* Logout */}
           <TouchableOpacity style={styles.button} onPress={logout}>
-            <Text style={{ color: 'red', fontWeight: 'bold', fontSize: scaleFont(16) }}>Log out</Text>
+            <Text style={styles.buttonText}>Log out</Text>
           </TouchableOpacity>
         </ScrollView>
 
-        {/* Bottom Navigation */}
-        <View style={styles.nav}>
-          <TouchableOpacity onPress={() => router.push('/homepage')}>
-            <Ionicons name="home" size={scaleFont(28)} color="#808080" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/cart')}>
-            <Ionicons name="cart" size={scaleFont(28)} color="#808080" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/profile')}>
-            <Ionicons name="person" size={scaleFont(28)} color="#D50000" />
-          </TouchableOpacity>
-        </View>
       </View>
     </SafeAreaView>
   );
@@ -135,47 +123,75 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#D50000',
   },
-  wrapper: { flex: 1, backgroundColor: '#D50000' },
+  wrapper: { 
+    flex: 1, 
+    backgroundColor: '#D50000',
+    alignItems: 'center',
+  },
   scrollContainer: { 
     alignItems: 'center', 
-    justifyContent: 'center', 
-    paddingTop: verticalScale(20), 
+    justifyContent: 'flex-start',
+    width: '100%',
+    paddingTop: 10,
     paddingBottom: verticalScale(100), 
     paddingHorizontal: scale(20),
   },
   headerRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
     width: '100%', 
-    marginBottom: verticalScale(20), 
-    position: 'relative',
+    marginTop: 50,
+    marginBottom: verticalScale(30),
+    alignItems: 'center',
   },
   headerTitle: { 
     color: 'white', 
-    fontSize: scaleFont(22), 
-    fontWeight: 'bold', 
-    position: 'absolute', 
-    left: 0, 
-    right: 0, 
+    fontSize: scaleFont(24), 
+    fontWeight: 'bold',
     textAlign: 'center',
+    width: '100%',
   },
   avatar: { 
-    width: scale(150), 
-    height: verticalScale(150), 
-    borderRadius: scale(75), 
+    width: scale(140), 
+    height: scale(140), 
+    borderRadius: scale(70), 
     backgroundColor: 'white',
-    padding: scale(10),
+    marginVertical: verticalScale(15),
   },
-  name: { color: 'white', fontSize: scaleFont(22), fontWeight: 'bold', marginTop: verticalScale(20) },
-  email: { color: 'white', fontSize: scaleFont(16), marginTop: verticalScale(5) },
-  phone: { color: 'white', fontSize: scaleFont(16), marginBottom: verticalScale(20) },
+  name: { 
+    color: 'white', 
+    fontSize: scaleFont(24), 
+    fontWeight: 'bold', 
+    marginTop: verticalScale(10),
+    textAlign: 'center'
+  },
+  email: { 
+    color: 'white', 
+    fontSize: scaleFont(16), 
+    marginTop: verticalScale(6),
+    textAlign: 'center'
+  },
+  phone: { 
+    color: 'white', 
+    fontSize: scaleFont(16), 
+    marginTop: verticalScale(10),
+    marginBottom: verticalScale(15),
+    textAlign: 'center'
+  },
   button: { 
     backgroundColor: '#FFF3E0', 
-    padding: verticalScale(12), 
-    width: '80%', 
-    borderRadius: scale(10), 
+    paddingVertical: verticalScale(15),
+    paddingHorizontal: scale(20),
+    width: scale(200), 
+    borderRadius: scale(8), 
     marginTop: verticalScale(10), 
     alignItems: 'center',
+    minHeight: verticalScale(54),
+    alignSelf: 'center'
+  },
+  buttonText: {
+    color: '#D50000',
+    fontWeight: 'bold',
+    fontSize: scaleFont(16),
+    textAlign: 'center'
   },
   nav: { 
     backgroundColor: '#fff', 
@@ -187,6 +203,5 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderTopLeftRadius: scale(15),
     borderTopRightRadius: scale(15),
-    marginBottom: Platform.OS === 'ios' ? verticalScale(10) : verticalScale(20),
   },
 });
