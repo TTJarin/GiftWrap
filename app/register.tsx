@@ -1,20 +1,22 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
-  Alert,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
-import { useRouter } from 'expo-router';
+import ScaledButton from './components/ScaledButton';
+import ScaledText from './components/ScaledText';
+import { scale, scaleFont, verticalScale } from './scale';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -22,11 +24,18 @@ export default function RegisterScreen() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState(''); 
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false); 
 
   const handleRegister = async () => {
-    if (!name || !phoneNumber || !email || !password) {
+    if (!name || !phoneNumber || !email || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match.');
       return;
     }
 
@@ -41,7 +50,7 @@ export default function RegisterScreen() {
         name,
         email,
         phoneNumber,
-        role: 'user', // default role
+        role: 'user',
         createdAt: serverTimestamp(),
       });
 
@@ -60,16 +69,19 @@ export default function RegisterScreen() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 20}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContainer}
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: scale(24) }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.container}>
-          <Text style={styles.title}>Create Account</Text>
+        <View style={{ alignItems: 'center' }}>
+          {/* Title */}
+          <ScaledText size={32} style={{ fontWeight: 'bold', color: '#fff', marginBottom: verticalScale(24) }}>
+            Create Account
+          </ScaledText>
 
           {/* Name */}
           <TextInput
-            style={styles.input}
+            style={[styles.input, { width: scale(280), padding: verticalScale(12), marginBottom: verticalScale(16) }]}
             placeholder="Full Name"
             value={name}
             onChangeText={setName}
@@ -78,7 +90,7 @@ export default function RegisterScreen() {
 
           {/* Phone */}
           <TextInput
-            style={styles.input}
+            style={[styles.input, { width: scale(280), padding: verticalScale(12), marginBottom: verticalScale(16) }]}
             placeholder="Phone Number"
             value={phoneNumber}
             onChangeText={setPhoneNumber}
@@ -88,7 +100,7 @@ export default function RegisterScreen() {
 
           {/* Email */}
           <TextInput
-            style={styles.input}
+            style={[styles.input, { width: scale(280), padding: verticalScale(12), marginBottom: verticalScale(16) }]}
             placeholder="Email"
             value={email}
             onChangeText={setEmail}
@@ -97,31 +109,68 @@ export default function RegisterScreen() {
             placeholderTextColor="#fff"
           />
 
-          {/* Password with eye toggle */}
-          <View style={styles.inputWithIcon}>
+          {/* Password */}
+          <View style={[styles.inputWithIcon, { marginBottom: verticalScale(16) }]}>
             <TextInput
               placeholder="Password"
               placeholderTextColor="#fff"
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
-              style={[styles.input, { paddingRight: 44 }]}
+              style={[
+                styles.input,
+                { width: scale(280), padding: verticalScale(12), paddingRight: scale(44) },
+              ]}
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeInside}>
-              <Ionicons name={showPassword ? 'eye' : 'eye-off'} size={20} color="#fff" />
+              <Ionicons name={showPassword ? 'eye' : 'eye-off'} size={scaleFont(20)} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          {/*  Confirm Password */}
+          <View style={[styles.inputWithIcon, { marginBottom: verticalScale(16) }]}>
+            <TextInput
+              placeholder="Confirm Password"
+              placeholderTextColor="#fff"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={!showConfirmPassword}
+              style={[
+                styles.input,
+                { width: scale(280), padding: verticalScale(12), paddingRight: scale(44) },
+              ]}
+            />
+            <TouchableOpacity
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              style={styles.eyeInside}
+            >
+              <Ionicons name={showConfirmPassword ? 'eye' : 'eye-off'} size={scaleFont(20)} color="#fff" />
             </TouchableOpacity>
           </View>
 
           {/* Register Button */}
-          <TouchableOpacity style={styles.button} onPress={handleRegister}>
-            <Text style={styles.buttonText}>SIGN UP</Text>
-          </TouchableOpacity>
+          <ScaledButton
+            title="SIGN UP"
+            onPress={handleRegister}
+            style={{
+              width: scale(200),
+              paddingVertical: verticalScale(16),
+              borderRadius: scale(30),
+              backgroundColor: '#fff0e6',
+              alignItems: 'center',
+              marginBottom: verticalScale(16),
+            }}
+            textStyle={{ fontSize: scaleFont(16), fontWeight: 'bold', color: '#e63946' }}
+          />
 
           {/* Login Redirect */}
-          <TouchableOpacity onPress={() => router.push('/login')} style={{ marginTop: 16 }}>
-            <Text style={{ color: '#fff', fontSize: 14 }}>
-              Already have an account? <Text style={{ fontWeight: 'bold', textDecorationLine: 'underline' }}>Login</Text>
-            </Text>
+          <TouchableOpacity onPress={() => router.push('/login')} style={{ marginTop: verticalScale(16) }}>
+            <ScaledText size={14} style={{ color: '#fff' }}>
+              Already have an account?{' '}
+              <ScaledText size={14} style={{ fontWeight: 'bold', textDecorationLine: 'underline', color: '#fff' }}>
+                Login
+              </ScaledText>
+            </ScaledText>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -130,47 +179,17 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: 24,
-  },
-  container: {
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 24,
-  },
   input: {
     backgroundColor: '#f77878',
-    borderRadius: 20,
-    padding: 12,
-    marginBottom: 16,
+    borderRadius: scale(20),
     color: '#fff',
-    width: 280,
   },
   inputWithIcon: {
     position: 'relative',
-    marginBottom: 16,
   },
   eyeInside: {
     position: 'absolute',
-    right: 12,
-    top: 12,
-  },
-  button: {
-    backgroundColor: '#fff0e6',
-    padding: 16,
-    borderRadius: 30,
-    alignItems: 'center',
-    width: 200,
-  },
-  buttonText: {
-    color: '#e63946',
-    fontWeight: 'bold',
-    textAlign: 'center',
+    right: scale(12),
+    top: verticalScale(12),
   },
 });

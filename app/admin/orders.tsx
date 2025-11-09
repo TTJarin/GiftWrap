@@ -1,20 +1,36 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList, Alert, StyleSheet, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  Alert,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
+import Checkbox from 'expo-checkbox';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { collection, deleteDoc, doc, getDocs } from 'firebase/firestore';
+import { collection, doc, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 
 export default function AdminOrders() {
   const router = useRouter();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'delivered' | 'pending'>('all');
 
+  // Fetch all orders
   const fetchOrders = async () => {
     try {
       setLoading(true);
       const snapshot = await getDocs(collection(db, 'orders'));
-      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const list = snapshot.docs
+        .map((doc): any => ({ id: doc.id, ...doc.data() }))
+        .sort(
+          (a: any, b: any) =>
+            (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)
+        ); // Latest first
       setOrders(list);
     } catch (error) {
       Alert.alert('Error', 'Failed to fetch orders');
@@ -23,72 +39,201 @@ export default function AdminOrders() {
     }
   };
 
-  useEffect(() => { fetchOrders(); }, []);
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
-  const handleDelete = async (id: string) => {
+  // Toggle delivered status
+  const handleMarkDelivered = async (id: string, currentStatus: boolean) => {
     try {
-      await deleteDoc(doc(db, 'orders', id));
+      await updateDoc(doc(db, 'orders', id), { delivered: !currentStatus });
       fetchOrders();
     } catch (error) {
-      Alert.alert('Error', 'Failed to delete order');
+      Alert.alert('Error', 'Failed to update order status');
     }
+  };
+
+  // Filter logic
+  const filteredOrders = orders.filter((order) => {
+    if (filter === 'all') return true;
+    if (filter === 'delivered') return order.delivered === true;
+    if (filter === 'pending') return !order.delivered;
+  });
+
+  // Format Firestore timestamp
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return 'Unknown';
+    const date = new Date(timestamp.seconds * 1000);
+    return date.toLocaleString();
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <TouchableOpacity onPress={() => router.replace('/admin')}>
-          <View style={styles.backButton}>
-            <Ionicons name="arrow-back" size={22} color="#D50000" />
-            <Text style={styles.backText}>Back</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
+      {/* Back Button */}
+      <TouchableOpacity onPress={() => router.replace('/admin')}>
+        <View style={styles.backButton}>
+          <Ionicons name="arrow-back" size={22} color="#D50000" />
+          <Text style={styles.backText}>Back</Text>
+        </View>
+      </TouchableOpacity>
 
       <Text style={styles.title}>Manage Orders</Text>
 
+      {/* Filter Buttons */}
+      <View style={styles.filterRow}>
+        <TouchableOpacity
+          style={[styles.filterBtn, filter === 'all' && styles.activeFilter]}
+          onPress={() => setFilter('all')}
+        >
+          <Text
+            style={filter === 'all' ? styles.activeText : styles.filterText}
+          >
+            All
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.filterBtn,
+            filter === 'delivered' && styles.activeFilter,
+          ]}
+          onPress={() => setFilter('delivered')}
+        >
+          <Text
+            style={
+              filter === 'delivered' ? styles.activeText : styles.filterText
+            }
+          >
+            Delivered
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.filterBtn,
+            filter === 'pending' && styles.activeFilter,
+          ]}
+          onPress={() => setFilter('pending')}
+        >
+          <Text
+            style={filter === 'pending' ? styles.activeText : styles.filterText}
+          >
+            Pending
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Orders List */}
       {loading ? (
         <ActivityIndicator size="large" color="#D50000" style={{ marginTop: 20 }} />
       ) : (
         <FlatList
-          data={orders}
+          data={filteredOrders}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <View style={styles.item}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.name}>Order: {item.orderId || item.id}</Text>
-                <Text style={styles.details}>Customer: {item.customerName || 'Unknown'}</Text>
-                <Text style={styles.details}>Status: {item.status || 'Pending'}</Text>
+            <View style={styles.card}>
+              {/* Header */}
+              <View style={styles.orderHeader}>
+                <Text style={styles.dateText}>{formatDate(item.createdAt)}</Text>
+                <View style={styles.checkboxRow}>
+                  <Checkbox
+                    value={item.delivered || false}
+                    onValueChange={() =>
+                      handleMarkDelivered(item.id, item.delivered || false)
+                    }
+                    color={item.delivered ? '#4CAF50' : undefined} // ✅ green when delivered
+                  />
+                  <Text
+                    style={[
+                      { marginLeft: 5 },
+                      item.delivered && { color: '#4CAF50', fontWeight: 'bold' }, // ✅ green text when delivered
+                    ]}
+                  >
+                    Delivered
+                  </Text>
+                </View>
               </View>
-              <TouchableOpacity
-                style={styles.deleteBtn}
-                onPress={() =>
-                  Alert.alert('Delete Order', `Delete ${item.orderId}?`, [
-                    { text: 'Cancel' },
-                    { text: 'Delete', style: 'destructive', onPress: () => handleDelete(item.id) },
-                  ])
-                }
-              >
-                <Text style={styles.deleteText}>Delete</Text>
-              </TouchableOpacity>
+
+              {/* Sender Section */}
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Sender Details</Text>
+                <Text>Email: {item.userEmail || 'N/A'}</Text>
+              </View>
+
+              {/* Receiver Section */}
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Receiver Details</Text>
+                <Text>Name: {item.receiver || 'N/A'}</Text>
+                <Text>Address: {item.address || 'N/A'}</Text>
+                <Text>Phone: {item.phone || 'N/A'}</Text>
+                <Text>Note: {item.note || 'None'}</Text>
+              </View>
+
+              {/* Order Section */}
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Order Details</Text>
+      
+                <Text>Total Amount: {item.total} BDT</Text>
+                <Text>Items:</Text>
+                {item.items?.map((p: any, idx: number) => (
+                  <Text key={idx}>
+                    • {p.name} × {p.qty} ({p.price * p.qty} BDT)
+                  </Text>
+                ))}
+              </View>
             </View>
           )}
-          ListEmptyComponent={<Text style={{ textAlign: 'center', marginTop: 30 }}>No orders found.</Text>}
+          ListEmptyComponent={
+            <Text style={{ textAlign: 'center', marginTop: 30 }}>
+              No orders found.
+            </Text>
+          }
         />
       )}
     </View>
   );
 }
 
+// ===================== Styles =====================
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', padding: 16 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
   backButton: { flexDirection: 'row', alignItems: 'center' },
   backText: { color: '#D50000', marginLeft: 5, fontSize: 16, fontWeight: 'bold' },
-  title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', color: '#D50000', marginVertical: 20 },
-  item: { flexDirection: 'row', backgroundColor: '#f8f8f8', borderRadius: 10, padding: 12, marginBottom: 10 },
-  name: { fontSize: 16, fontWeight: 'bold', color: '#333' },
-  details: { fontSize: 14, color: '#666' },
-  deleteBtn: { backgroundColor: '#D50000', borderRadius: 6, paddingVertical: 6, paddingHorizontal: 12 },
-  deleteText: { color: 'white', fontWeight: 'bold' },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#D50000',
+    marginVertical: 20,
+  },
+  filterRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: 20 },
+  filterBtn: {
+    borderColor: '#D50000',
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    marginHorizontal: 5,
+  },
+  filterText: { color: '#D50000', fontWeight: '500' },
+  activeFilter: { backgroundColor: '#D50000' },
+  activeText: { color: '#fff', fontWeight: 'bold' },
+  card: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+    backgroundColor: '#fff',
+  },
+  orderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  dateText: { fontWeight: 'bold', color: '#D50000' },
+  checkboxRow: { flexDirection: 'row', alignItems: 'center' },
+  section: { marginVertical: 5 },
+  sectionTitle: { fontWeight: 'bold', color: '#D50000' },
 });

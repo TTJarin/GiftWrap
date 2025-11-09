@@ -1,18 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { collection, doc, getDoc, getDocs, query, where, CollectionReference, Query } from 'firebase/firestore';
+import { collection, CollectionReference, doc, getDoc, getDocs, query, Query, where } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import {
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
-} from 'react-native';
+import { FlatList, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { db } from '../firebaseConfig';
+import ScaledText from './components/ScaledText';
+import { scale, scaleFont, verticalScale } from './scale';
 
-// --- Product type ---
 interface Product {
   id: string;
   name: string;
@@ -20,6 +16,13 @@ interface Product {
   category: string;
   description?: string;
   picture?: string;
+  productsImages?: string[];
+}
+
+interface CartItem {
+  name: string;
+  price: number;
+  qty: number;
 }
 
 export default function ProductScreen() {
@@ -34,23 +37,25 @@ export default function ProductScreen() {
       setLoading(true);
       try {
         if (id && typeof id === 'string') {
-          // Fetch single product by id
           const docRef = doc(db, 'products', id);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
-            setProduct({ id: docSnap.id, ...docSnap.data() } as Product);
+            const data = docSnap.data() as Record<string, any>;
+            setProduct({ id: docSnap.id, ...data } as Product);
           } else {
             setProduct(null);
           }
         } else {
-          // Fetch all products or by category
           let q: CollectionReference | Query = collection(db, 'products');
           if (category && typeof category === 'string') {
             q = query(collection(db, 'products'), where('category', '==', category));
           }
-
           const snapshot = await getDocs(q);
-          setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product)));
+          const allProducts: Product[] = snapshot.docs.map(doc => {
+            const data = doc.data() as Record<string, any>;
+            return { id: doc.id, ...data } as Product;
+          });
+          setProducts(allProducts);
         }
       } catch (err) {
         console.log(err);
@@ -58,140 +63,164 @@ export default function ProductScreen() {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [category, id]);
 
-  const handleAddToCart = (item: Product) => {
-    router.push({
-      pathname: '/cart',
-      params: {
-        name: item.name,
-        price: item.price,
-        qty: '1',
-      },
-    });
+  const handleAddToCart = async (item: Product) => {
+    try {
+      const storedCart = await AsyncStorage.getItem('cart');
+      let cart: CartItem[] = storedCart ? JSON.parse(storedCart) : [];
+
+      const idx = cart.findIndex(ci => ci.name === item.name && ci.price === item.price);
+      if (idx !== -1) {
+        cart[idx].qty += 1;
+      } else {
+        cart.push({ name: item.name, price: item.price, qty: 1 });
+      }
+
+      await AsyncStorage.setItem('cart', JSON.stringify(cart));
+      alert(`${item.name} added to cart!`);
+    } catch (err) {
+      console.error('Error adding to cart:', err);
+    }
   };
 
+  // --- Single product view ---
   if (id && typeof id === 'string') {
     if (loading) return <LoadingScreen />;
     if (!product) return <NotFoundScreen router={router} />;
 
     return (
-      <View style={styles.container}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>{'< Back'}</Text>
-        </TouchableOpacity>
-        <Text style={styles.appTitle}>GiftWrap</Text>
-        <View style={styles.productDetail}>
-          <Image source={{ uri: product.picture }} style={styles.productDetailImage} />
-          <Text style={styles.productDetailName}>{product.name}</Text>
-          <Text style={styles.productDetailPrice}>{product.price} BDT</Text>
-          <Text style={styles.productDetailCategory}>Category: {product.category}</Text>
-          <Text style={styles.productDetailDescription}>{product.description}</Text>
-          <TouchableOpacity style={styles.button} onPress={() => handleAddToCart(product)}>
-            <Text style={styles.buttonText}>Add to Cart</Text>
-          </TouchableOpacity>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <ScrollView contentContainerStyle={styles.centeredScroll}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={scaleFont(28)} color="#fff" />
+            </TouchableOpacity>
+
+            <ScaledText size={scaleFont(28)} style={styles.appTitle}>GiftWrap</ScaledText>
+
+            <Image
+              source={{ uri: product.productsImages?.[0] || product.picture || 'https://via.placeholder.com/150' }}
+              style={styles.productDetailImage}
+            />
+            <ScaledText size={scaleFont(22)} style={styles.productDetailName}>{product.name}</ScaledText>
+            <ScaledText size={scaleFont(18)} style={styles.productDetailPrice}>{product.price} BDT</ScaledText>
+            <ScaledText size={scaleFont(15)} style={styles.productDetailCategory}>Category: {product.category}</ScaledText>
+            <ScaledText size={scaleFont(15)} style={styles.productDetailDescription}>{product.description}</ScaledText>
+
+            <TouchableOpacity style={styles.button} onPress={() => handleAddToCart(product)}>
+              <ScaledText size={scaleFont(16)} style={styles.buttonText}>Add to Cart</ScaledText>
+            </TouchableOpacity>
+          </ScrollView>
+
+          <BottomNav router={router} />
         </View>
-        <BottomNav router={router} />
-      </View>
+      </SafeAreaView>
     );
   }
 
+  // --- Multiple products view ---
   const renderProduct = ({ item }: { item: Product }) => (
     <View style={styles.productCard}>
-      <Image source={{ uri: item.picture }} style={styles.productImage} />
-      <Text style={styles.productName}>{item.name}</Text>
-      <Text style={styles.productPrice}>{item.price} BDT</Text>
-      <Text style={styles.productCategory}>Category: {item.category}</Text>
+      <Image source={{ uri: item.picture || 'https://via.placeholder.com/120' }} style={styles.productImage} />
+      <ScaledText size={scaleFont(16)} style={styles.productName}>{item.name}</ScaledText>
+      <ScaledText size={scaleFont(14)} style={styles.productPrice}>{item.price} BDT</ScaledText>
+      <ScaledText size={scaleFont(12)} style={styles.productCategory}>Category: {item.category}</ScaledText>
       <TouchableOpacity style={styles.button} onPress={() => handleAddToCart(item)}>
-        <Text style={styles.buttonText}>Add to Cart</Text>
+        <ScaledText size={scaleFont(16)} style={styles.buttonText}>Add to Cart</ScaledText>
       </TouchableOpacity>
     </View>
   );
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-        <Text style={styles.backText}>{'< Back'}</Text>
-      </TouchableOpacity>
-      <Text style={styles.appTitle}>GiftWrap</Text>
-      <Text style={styles.categoryTitle}>{category && typeof category === 'string' ? `Category: ${category}` : 'All Products'}</Text>
-      {loading ? (
-        <Text style={{ color: '#fff', marginTop: 20 }}>Loading...</Text>
-      ) : (
-        <FlatList
-          data={products}
-          keyExtractor={item => item.id}
-          renderItem={renderProduct}
-          contentContainerStyle={styles.listContent}
-          numColumns={2}
-          columnWrapperStyle={{ justifyContent: 'space-between', marginBottom: 15 }}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
-      <BottomNav router={router} />
-    </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.centeredScroll}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={scaleFont(28)} color="#fff" />
+          </TouchableOpacity>
+
+          <ScaledText size={scaleFont(28)} style={styles.appTitle}>GiftWrap</ScaledText>
+          <ScaledText size={scaleFont(18)} style={styles.categoryTitle}>{category ? `Category: ${category}` : 'All Products'}</ScaledText>
+
+          <FlatList
+            data={products}
+            keyExtractor={item => item.id}
+            renderItem={renderProduct}
+            contentContainerStyle={styles.centeredFlatList}
+            numColumns={2}
+            columnWrapperStyle={{ justifyContent: 'center', marginBottom: verticalScale(15) }}
+            showsVerticalScrollIndicator={false}
+          />
+        </ScrollView>
+
+        <BottomNav router={router} />
+      </View>
+    </SafeAreaView>
   );
 }
 
+// --- Bottom navigation ---
 const BottomNav = ({ router }: { router: any }) => (
   <View style={styles.nav}>
     <TouchableOpacity onPress={() => router.push('/homepage')}>
-      <Ionicons name="home" size={28} color="#D50000" />
+      <Ionicons name="home" size={scaleFont(28)} color="#D50000" />
     </TouchableOpacity>
     <TouchableOpacity onPress={() => router.push('/cart')}>
-      <Ionicons name="cart" size={28} color="gray" />
+      <Ionicons name="cart" size={scaleFont(28)} color="gray" />
     </TouchableOpacity>
     <TouchableOpacity onPress={() => router.push('/profile')}>
-      <Ionicons name="person" size={28} color="gray" />
+      <Ionicons name="person" size={scaleFont(28)} color="gray" />
     </TouchableOpacity>
   </View>
 );
 
 const LoadingScreen = () => (
-  <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-    <Text style={{ color: '#fff', marginTop: 20 }}>Loading...</Text>
-  </View>
+  <SafeAreaView style={styles.safeArea}>
+    <View style={styles.centerAll}>
+      <ScaledText size={scaleFont(16)} style={{ color: '#fff' }}>Loading...</ScaledText>
+    </View>
+  </SafeAreaView>
 );
 
 const NotFoundScreen = ({ router }: { router: any }) => (
-  <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-    <Text style={{ color: '#fff', marginBottom: 20 }}>Product not found.</Text>
-    <TouchableOpacity onPress={() => router.back()} style={styles.button}>
-      <Text style={styles.buttonText}>Go Back</Text>
-    </TouchableOpacity>
-  </View>
+  <SafeAreaView style={styles.safeArea}>
+    <View style={styles.centerAll}>
+      <ScaledText size={scaleFont(16)} style={{ color: '#fff', marginBottom: verticalScale(20) }}>Product not found.</ScaledText>
+      <TouchableOpacity style={styles.button} onPress={() => router.back()}>
+        <ScaledText size={scaleFont(16)} style={styles.buttonText}>Go Back</ScaledText>
+      </TouchableOpacity>
+    </View>
+  </SafeAreaView>
 );
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#D50000', paddingTop: 0 },
-  backButton: { flexDirection: 'row', alignItems: 'center', position: 'absolute', top: 30, left: 20, zIndex: 1 },
-  backText: { color: 'white', marginLeft: 6, fontSize: 16 },
-  appTitle: { fontSize: 28, color: 'white', fontWeight: 'bold', textAlign: 'center', marginTop: 60, marginBottom: 10 },
-  categoryTitle: { fontSize: 18, color: 'white', textAlign: 'center', marginBottom: 20 },
-  listContent: { paddingBottom: 120, paddingHorizontal: 10 },
-  productCard: { backgroundColor: '#FFF3E0', borderRadius: 10, padding: 10, width: '48%', alignItems: 'center' },
-  productImage: { width: '100%', height: 120, borderRadius: 8, marginBottom: 8, backgroundColor: '#fff' },
-  productName: { fontWeight: 'bold', color: '#D50000', fontSize: 16, textAlign: 'center' },
-  productPrice: { color: '#D50000', fontSize: 14, marginVertical: 2 },
-  productCategory: { fontSize: 12, color: '#888', textAlign: 'center', marginBottom: 8 },
-  productDetail: { alignItems: 'center', marginTop: 30, marginBottom: 30, width: '100%' },
-  productDetailImage: { width: 150, height: 150, borderRadius: 8, marginBottom: 16, backgroundColor: '#fff' },
-  productDetailName: { fontWeight: 'bold', color: '#FFF3E0', fontSize: 22, textAlign: 'center', marginBottom: 6 },
-  productDetailPrice: { color: '#FFF3E0', marginTop: 5, fontSize: 18, textAlign: 'center' },
-  productDetailCategory: { fontSize: 15, color: '#FFF3E0', marginBottom: 10, textAlign: 'center' },
-  productDetailDescription: { fontSize: 15, color: '#FFF3E0', marginBottom: 16, textAlign: 'center', paddingHorizontal: 20 },
-  button: { backgroundColor: '#FFF3E0', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8, alignItems: 'center', marginTop: 10 },
-  buttonText: { color: '#D50000', fontWeight: 'bold', fontSize: 16 },
-  nav: { 
-    position: 'absolute', bottom: 0, left: 0, right: 0, height: 60, 
+  safeArea: { flex: 1, backgroundColor: '#D50000' },
+  container: { flex: 1, backgroundColor: '#D50000' },
+  centeredScroll: { alignItems: 'center', justifyContent: 'center', paddingVertical: verticalScale(60), paddingBottom: verticalScale(100) },
+  centeredFlatList: { alignItems: 'center', justifyContent: 'center', paddingBottom: verticalScale(120) },
+  centerAll: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#D50000' },
+  backButton: { position: 'absolute', top: verticalScale(20), left: scale(20), zIndex: 1 },
+  appTitle: { color: 'white', fontWeight: 'bold', textAlign: 'center', marginBottom: verticalScale(10) },
+  categoryTitle: { color: 'white', textAlign: 'center', marginBottom: verticalScale(20) },
+  productCard: { backgroundColor: '#FFF3E0', width: '45%', alignItems: 'center', justifyContent: 'center', padding: scale(10), borderRadius: scale(10) },
+  productImage: { width: '100%', height: verticalScale(120), borderRadius: scale(8), marginBottom: verticalScale(8), backgroundColor: '#fff' },
+  productName: { fontWeight: 'bold', color: '#D50000', textAlign: 'center' },
+  productPrice: { color: '#D50000', marginVertical: verticalScale(2) },
+  productCategory: { color: '#888', textAlign: 'center', marginBottom: verticalScale(8) },
+  productDetailImage: { width: scale(180), height: verticalScale(180), borderRadius: scale(8), backgroundColor: '#fff', marginBottom: verticalScale(16) },
+  productDetailName: { fontWeight: 'bold', color: '#FFF3E0', textAlign: 'center', marginBottom: verticalScale(6) },
+  productDetailPrice: { color: '#FFF3E0', marginTop: verticalScale(5), textAlign: 'center' },
+  productDetailCategory: { color: '#FFF3E0', marginBottom: verticalScale(10), textAlign: 'center' },
+  productDetailDescription: { color: '#FFF3E0', marginBottom: verticalScale(16), textAlign: 'center', paddingHorizontal: scale(20) },
+  button: { backgroundColor: '#FFF3E0', alignItems: 'center', justifyContent: 'center', paddingVertical: verticalScale(10), paddingHorizontal: scale(20), borderRadius: scale(8), marginTop: verticalScale(10) },
+  buttonText: { color: '#D50000', fontWeight: 'bold' },
+  nav: {
+    position: 'absolute', bottom: verticalScale(10), left: 0, right: 0,
     backgroundColor: '#FFF3E0', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center',
-    borderTopLeftRadius: 12, borderTopRightRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5
+    borderTopLeftRadius: scale(12), borderTopRightRadius: scale(12),
+    shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 5,
+    height: verticalScale(60),
   },
 });

@@ -9,11 +9,12 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { db } from '../firebaseConfig';
 
-// --- TypeScript types ---
 interface Product {
   name: string;
   [key: string]: any;
@@ -48,7 +49,6 @@ export default function OrdersScreen() {
           return;
         }
 
-        // Fetch orders from Firestore by userId and userEmail
         const qById = query(collection(db, 'orders'), where('userId', '==', user.uid));
         const qByEmail = query(collection(db, 'orders'), where('userEmail', '==', user.email || ''));
         const [snapById, snapByEmail] = await Promise.all([getDocs(qById), getDocs(qByEmail)]);
@@ -61,48 +61,9 @@ export default function OrdersScreen() {
         ordersById.forEach(o => map.set(o.id, o));
         const firestoreOrders: Order[] = Array.from(map.values());
 
-        // Fetch local orders if available
-        let localOrders: Order[] = [];
-        try {
-          if (typeof window !== 'undefined' && window.localStorage) {
-            const raw = window.localStorage.getItem('orders');
-            if (raw) {
-              const parsed = JSON.parse(raw);
-              if (Array.isArray(parsed)) {
-                localOrders = parsed.map((o, i) => {
-                  let createdAt = o.createdAt;
-                  if (createdAt && !createdAt.seconds) {
-                    try {
-                      createdAt = { seconds: Math.floor(new Date(createdAt).getTime() / 1000) };
-                    } catch {
-                      createdAt = { seconds: Math.floor(Date.now() / 1000) };
-                    }
-                  }
-                  return { ...o, id: o.id || `local-${i}`, createdAt } as Order;
-                });
-              }
-            }
-          }
-        } catch (_err) {}
+        const merged: Order[] = firestoreOrders.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
-        // Merge Firestore and local orders
-        const merged: Order[] = [
-          ...(user
-            ? localOrders.filter(
-                o => (o.userId && o.userId === user.uid) || (o.userEmail && o.userEmail === user.email)
-              )
-            : localOrders),
-          ...firestoreOrders.filter(f => !localOrders.find(l => l.id === f.id)),
-        ];
-
-        // Sort by createdAt descending
-        const sortedOrders: Order[] = merged.sort((a, b) => {
-          const timeA = a.createdAt?.seconds || 0;
-          const timeB = b.createdAt?.seconds || 0;
-          return timeB - timeA;
-        });
-
-        setOrders(sortedOrders);
+        setOrders(merged);
       } catch (_err) {
         setOrders([]);
       } finally {
@@ -115,68 +76,112 @@ export default function OrdersScreen() {
   const handleBack = () => router.replace('/profile');
 
   return (
-    <View style={styles.wrapper}>
-      <SafeAreaView style={styles.safeArea}>
-        <TouchableOpacity onPress={handleBack} style={styles.backWrapper}>
-          <Text style={styles.back}>{'< Back'}</Text>
-        </TouchableOpacity>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <View style={styles.wrapper}>
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.headerRow}>
+            <TouchableOpacity onPress={handleBack}>
+              <Ionicons name="arrow-back" size={24} color="white" />
+            </TouchableOpacity>
+            <Text style={styles.title}>Confirmed Orders</Text>
+          </View>
 
-        <Text style={styles.title}>Confirmed Orders</Text>
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
+            {loading ? (
+              <Text style={{ color: '#fff', marginTop: 20 }}>Loading...</Text>
+            ) : orders.length > 0 ? (
+              orders.map(order => (
+                <View key={order.id} style={styles.orderBox}>
+                  <Text style={styles.orderText}>Receiver: {order.receiver || 'N/A'}</Text>
+                  <Text style={styles.orderText}>
+                    Items:{' '}
+                    {Array.isArray(order.items) && order.items.length > 0
+                      ? order.items.map(item => item.name).join(', ')
+                      : 'N/A'}
+                  </Text>
+                  <Text style={styles.orderText}>Total: {order.total ?? 'N/A'} BDT</Text>
+                  <Text style={styles.orderText}>
+                    Status: {order.delivered ? 'Delivered' : 'Pending'}
+                  </Text>
+                  <Text style={styles.orderText}>
+                    Date:{' '}
+                    {order.createdAt && order.createdAt.seconds
+                      ? new Date(order.createdAt.seconds * 1000).toLocaleString()
+                      : 'N/A'}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <Text style={{ color: '#fff', marginTop: 20 }}>No orders found</Text>
+            )}
+          </ScrollView>
+        </SafeAreaView>
 
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          {loading ? (
-            <Text style={{ color: '#fff', marginTop: 20 }}>Loading...</Text>
-          ) : orders.length > 0 ? (
-            orders.map(order => (
-              <View key={order.id} style={styles.orderBox}>
-                <Text style={styles.orderText}>Receiver: {order.receiver || 'N/A'}</Text>
-                <Text style={styles.orderText}>
-                  Items:{' '}
-                  {Array.isArray(order.products) && order.products.length > 0
-                    ? order.products.map(item => item.name).join(', ')
-                    : 'N/A'}
-                </Text>
-                <Text style={styles.orderText}>Total: {order.total ?? 'N/A'} BDT</Text>
-                <Text style={styles.orderText}>
-                  Status: {order.delivered ? 'Delivered' : 'Pending'}
-                </Text>
-                <Text style={styles.orderText}>
-                  Date:{' '}
-                  {order.createdAt && order.createdAt.seconds
-                    ? new Date(order.createdAt.seconds * 1000).toLocaleString()
-                    : 'N/A'}
-                </Text>
-              </View>
-            ))
-          ) : (
-            <Text style={{ color: '#fff', marginTop: 20 }}>No orders found</Text>
-          )}
-        </ScrollView>
-      </SafeAreaView>
-
-      <View style={styles.nav}>
-        <TouchableOpacity onPress={() => router.push('/homepage')}>
-          <Ionicons name="home" size={28} color="#808080" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push('/cart')}>
-          <Ionicons name="cart" size={28} color="#808080" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push('/profile')}>
-          <Ionicons name="person" size={28} color="gray" />
-        </TouchableOpacity>
+        <View style={styles.nav}>
+          <TouchableOpacity onPress={() => router.push('/homepage')}>
+            <Ionicons name="home" size={28} color="#808080" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/cart')}>
+            <Ionicons name="cart" size={28} color="#808080" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/profile')}>
+            <Ionicons name="person" size={28} color="gray" />
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   wrapper: { flex: 1, backgroundColor: '#D50000' },
-  safeArea: { flex: 1 },
-  backWrapper: { position: 'absolute', top: 30, left: 20, zIndex: 2 },
-  back: { color: 'white', fontSize: 16 },
-  title: { color: 'white', fontSize: 24, fontWeight: 'bold', marginTop: 80, textAlign: 'center' },
-  scrollContainer: { padding: 20, paddingBottom: 120 },
-  orderBox: { backgroundColor: '#FFF3E0', borderRadius: 10, padding: 15, marginBottom: 15 },
-  orderText: { fontSize: 14, color: '#333', marginBottom: 4 },
-  nav: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#ffffff', flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12, borderTopWidth: 1, borderColor: '#ccc' },
+  safeArea: { 
+    flex: 1, 
+    paddingTop: Platform.OS === 'android' ? 30 : 0, // ✅ fix for top spacing
+  },
+  headerRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    paddingHorizontal: 20, 
+    marginBottom: 10, 
+  },
+  title: { 
+    color: 'white', 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    marginLeft: 15, 
+    textAlign: 'center' 
+  },
+  scrollContainer: { 
+    padding: 20, 
+    paddingBottom: 120 
+  },
+  orderBox: { 
+    backgroundColor: '#FFF3E0', 
+    borderRadius: 10, 
+    padding: 15, 
+    marginBottom: 15 
+  },
+  orderText: { 
+    fontSize: 14, 
+    color: '#333', 
+    marginBottom: 4 
+  },
+  nav: { 
+    position: 'absolute', 
+    bottom: 30,
+    left: 0, 
+    right: 0, 
+    backgroundColor: '#fff', 
+    flexDirection: 'row', 
+    justifyContent: 'space-around', 
+    paddingVertical: 12, 
+    borderTopWidth: 1, 
+    borderColor: '#ccc',
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
+  },
 });

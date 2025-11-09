@@ -18,6 +18,7 @@ import {
   Keyboard,
 } from 'react-native';
 import { db } from '../firebaseConfig';
+import { scale, verticalScale, scaleFont } from './scale'; // <- scaling utility
 
 interface Errors {
   eventName?: string;
@@ -72,11 +73,8 @@ export default function MyDatesScreen() {
       setErrors({});
       router.replace('/calendar');
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        Alert.alert('Error', err.message);
-      } else {
-        Alert.alert('Error', 'Failed to save reminder');
-      }
+      if (err instanceof Error) Alert.alert('Error', err.message);
+      else Alert.alert('Error', 'Failed to save reminder');
     }
   };
 
@@ -84,24 +82,24 @@ export default function MyDatesScreen() {
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? verticalScale(100) : 0}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <SafeAreaView style={styles.wrapper}>
           <ScrollView
-            contentContainerStyle={[styles.container, { paddingBottom: 200 }]}
+            contentContainerStyle={[styles.container, { paddingBottom: verticalScale(200) }]}
             keyboardShouldPersistTaps="handled"
           >
-            {/* Back Button */}
-            <TouchableOpacity onPress={() => router.back()} style={styles.backWrapper}>
-              <Text style={styles.back}>{'< Back'}</Text>
+            {/* Back Arrow */}
+            <TouchableOpacity onPress={() => router.replace('/profile')} style={[styles.backWrapper, { top: verticalScale(80), left: scale(20) }]}>
+              <Ionicons name="arrow-back" size={scaleFont(28)} color="white" />
             </TouchableOpacity>
 
-            <Text style={styles.title}>My Dates</Text>
+            <Text style={[styles.title, { fontSize: scaleFont(26), marginBottom: verticalScale(40) }]}>My Dates</Text>
 
-            <Text style={styles.label}>Event Name</Text>
+            <Text style={[styles.label, { marginBottom: verticalScale(8) }]}>Event Name</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { padding: verticalScale(12), marginBottom: verticalScale(16), borderRadius: scale(10) }]}
               value={eventName}
               onChangeText={setEventName}
               placeholder="e.g. Birthday of Ammu"
@@ -109,9 +107,9 @@ export default function MyDatesScreen() {
             />
             {errors.eventName && <Text style={styles.errorText}>{errors.eventName}</Text>}
 
-            <Text style={styles.label}>Day</Text>
+            <Text style={[styles.label, { marginBottom: verticalScale(8) }]}>Day</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { padding: verticalScale(12), marginBottom: verticalScale(16), borderRadius: scale(10) }]}
               value={day}
               onChangeText={setDay}
               placeholder="DD"
@@ -121,9 +119,9 @@ export default function MyDatesScreen() {
             />
             {errors.day && <Text style={styles.errorText}>{errors.day}</Text>}
 
-            <Text style={styles.label}>Month</Text>
+            <Text style={[styles.label, { marginBottom: verticalScale(8) }]}>Month</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { padding: verticalScale(12), marginBottom: verticalScale(16), borderRadius: scale(10) }]}
               value={month}
               onChangeText={setMonth}
               placeholder="MM"
@@ -133,9 +131,9 @@ export default function MyDatesScreen() {
             />
             {errors.month && <Text style={styles.errorText}>{errors.month}</Text>}
 
-            <Text style={styles.label}>Year</Text>
+            <Text style={[styles.label, { marginBottom: verticalScale(8) }]}>Year</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { padding: verticalScale(12), marginBottom: verticalScale(16), borderRadius: scale(10) }]}
               value={year}
               onChangeText={setYear}
               placeholder="YYYY"
@@ -145,21 +143,21 @@ export default function MyDatesScreen() {
             />
             {errors.year && <Text style={styles.errorText}>{errors.year}</Text>}
 
-            <TouchableOpacity style={styles.button} onPress={handleSetReminder}>
-              <Text style={styles.buttonText}>Set Reminder</Text>
+            <TouchableOpacity style={[styles.button, { padding: verticalScale(15), borderRadius: scale(10), marginTop: verticalScale(20) }]} onPress={handleSetReminder}>
+              <Text style={[styles.buttonText, { fontSize: scaleFont(16) }]}>Set Reminder</Text>
             </TouchableOpacity>
           </ScrollView>
 
           {/* Custom Bottom Nav */}
-          <View style={styles.nav}>
+          <View style={[styles.nav, { paddingVertical: verticalScale(12), borderTopLeftRadius: scale(15), borderTopRightRadius: scale(15) }]}>
             <TouchableOpacity onPress={() => router.push('/homepage')}>
-              <Ionicons name="home" size={28} color="#808080" />
+              <Ionicons name="home" size={scaleFont(28)} color="#808080" />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => router.push('/cart')}>
-              <Ionicons name="cart" size={28} color="#808080" />
+              <Ionicons name="cart" size={scaleFont(28)} color="#808080" />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => router.push('/profile')}>
-              <Ionicons name="person" size={28} color="gray" />
+              <Ionicons name="person" size={scaleFont(28)} color="gray" />
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -174,69 +172,51 @@ const styles = StyleSheet.create({
     backgroundColor: '#D50000',
   },
   container: {
-    paddingTop: 70,
-    paddingHorizontal: 20,
+    paddingTop: verticalScale(70),
+    paddingHorizontal: scale(20),
   },
   title: {
     color: 'white',
-    fontSize: 26,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 40,
   },
   backWrapper: {
     position: 'absolute',
-    top: 30,
-    left: 20,
     zIndex: 2,
-  },
-  back: {
-    color: 'white',
-    fontSize: 16,
   },
   label: {
     color: '#FFF3E0',
-    marginBottom: 8,
   },
   input: {
     backgroundColor: '#FFF3E0',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 16,
     color: '#000',
   },
   button: {
     backgroundColor: '#FFF3E0',
-    padding: 15,
-    borderRadius: 10,
     alignItems: 'center',
-    marginTop: 20,
   },
   buttonText: {
     fontWeight: 'bold',
     color: '#D50000',
-    fontSize: 16,
   },
   nav: {
     position: 'absolute',
-    bottom: 16, // above system nav bar
-    left: 16,
-    right: 16,
-    backgroundColor: '#ffffff',
+    bottom: verticalScale(30),
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 12,
-    borderRadius: 20,
-    borderWidth: 1,
+    borderTopWidth: 1,
     borderColor: '#ccc',
   },
   errorText: {
     color: '#fff',
     backgroundColor: '#D50000',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginBottom: 8,
-    fontSize: 13,
+    paddingHorizontal: scale(10),
+    paddingVertical: verticalScale(4),
+    borderRadius: scale(8),
+    marginBottom: verticalScale(8),
+    fontSize: scaleFont(13),
   },
 });

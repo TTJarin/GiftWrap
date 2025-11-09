@@ -1,28 +1,28 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-  Image,
-  Platform,
-  KeyboardAvoidingView,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { collection, onSnapshot } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { db } from '../firebaseConfig';
-import * as Linking from 'expo-linking'; // <-- ADD THIS
+import ScaledText from './components/ScaledText';
+import { scale, scaleFont, verticalScale } from './scale';
 
-// TypeScript interface
+// --- Product Type ---
 interface Product {
   id: string;
   name: string;
-  price: string;
+  price: number;
   category: string;
   picture?: string;
 }
@@ -36,47 +36,22 @@ export default function HomeScreen() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // --- DEEP LINK HANDLER ---
-  useEffect(() => {
-    const handleDeepLink = ({ url }: { url: string }) => {
-      if (!url) return;
-
-      // If the URL indicates a payment success/fail/cancel, go to homepage
-      if (
-        url.includes('payment-success') ||
-        url.includes('payment-fail') ||
-        url.includes('payment-cancel')
-      ) {
-        router.push('/homepage');
-      }
-    };
-
-    // Listen for incoming deep links
-    const subscription = Linking.addEventListener('url', handleDeepLink);
-
-    // Handle initial URL if app was opened from a link
-    Linking.getInitialURL().then((url) => {
-      if (url) handleDeepLink({ url });
-    });
-
-    return () => subscription.remove();
-  }, [router]);
-
-  // --- Fetch products (real-time)
+  // --- Real-time Products ---
   useEffect(() => {
     const productsRef = collection(db, 'products');
     const unsubscribe = onSnapshot(
       productsRef,
       (snapshot) => {
-        const fetchedProducts = snapshot.docs
-          .map((doc) => ({
-            id: doc.id,
-            name: doc.data().name || '',
-            price: doc.data().price || '',
-            category: doc.data().category || '',
-            picture: doc.data().picture || '',
-          }))
-          .sort((a, b) => a.name.localeCompare(b.name)); // alphabetically
+        const fetchedProducts = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          name: doc.data().name || '',
+          price: doc.data().price || 0,
+          category: doc.data().category || '',
+          picture:
+            (doc.data().productsImages && doc.data().productsImages[0]) ||
+            doc.data().picture ||
+            '',
+        }));
         setProducts(fetchedProducts);
         setLoading(false);
       },
@@ -88,7 +63,7 @@ export default function HomeScreen() {
     return () => unsubscribe();
   }, []);
 
-  // --- Fetch filters (real-time)
+  // --- Real-time Filters ---
   useEffect(() => {
     const filtersRef = collection(db, 'filters');
     const unsubscribe = onSnapshot(
@@ -107,7 +82,7 @@ export default function HomeScreen() {
     return () => unsubscribe();
   }, []);
 
-  // --- Filtered products based on search & category
+  // --- Filtered Products ---
   const filteredProducts = products.filter((item) => {
     const matchesCategory =
       selectedCategory === 'All' || item.category.toLowerCase() === selectedCategory.toLowerCase();
@@ -116,20 +91,20 @@ export default function HomeScreen() {
   });
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#D50000' }}>
+    <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.logo}>GiftWrap</Text>
+            <ScaledText size={28} style={styles.logo}>GiftWrap</ScaledText>
           </View>
 
-          {/* Search Bar */}
+          {/* Search */}
           <TextInput
-            style={styles.search}
+            style={[styles.search, { padding: verticalScale(10), borderRadius: scale(15), marginVertical: verticalScale(15) }]}
             placeholder="Search products..."
             placeholderTextColor="#888"
             value={searchQuery}
@@ -138,87 +113,89 @@ export default function HomeScreen() {
 
           {/* Category Dropdown */}
           <TouchableOpacity
-            style={styles.dropdown}
+            style={[styles.dropdown, { padding: verticalScale(12), borderRadius: scale(12), marginTop: verticalScale(12) }]}
             onPress={() => setDropdownOpen(!dropdownOpen)}
           >
             <View style={{ width: '100%', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={styles.dropdownButtonText}>{selectedCategory}</Text>
+              <ScaledText size={16} style={styles.dropdownButtonText}>{selectedCategory}</ScaledText>
               <Ionicons
                 name={dropdownOpen ? 'chevron-up' : 'chevron-down'}
-                size={18}
+                size={scaleFont(18)}
                 color="#333"
-                style={{ position: 'absolute', right: 12 }}
+                style={{ position: 'absolute', right: scale(12) }}
               />
             </View>
           </TouchableOpacity>
 
           {dropdownOpen && (
-            <View style={styles.dropdownList}>
+            <View style={[styles.dropdownList, { borderRadius: scale(10) }]}>
               {filters.map((item) => (
                 <TouchableOpacity
                   key={item}
                   style={[
                     styles.dropdownItem,
                     selectedCategory === item && styles.dropdownItemSelected,
+                    { paddingVertical: verticalScale(12), paddingHorizontal: scale(14) },
                   ]}
                   onPress={() => {
                     setSelectedCategory(item);
                     setDropdownOpen(false);
                   }}
                 >
-                  <Text
+                  <ScaledText
+                    size={14}
                     style={[
                       styles.dropdownItemText,
                       selectedCategory === item && styles.dropdownItemTextSelected,
                     ]}
                   >
                     {item}
-                  </Text>
+                  </ScaledText>
                 </TouchableOpacity>
               ))}
             </View>
           )}
 
-          {/* Section */}
-          <Text style={styles.sectionTitle}>Trending Now</Text>
+          {/* Trending Products */}
+          <ScaledText size={20} style={styles.sectionTitle}>Trending Now</ScaledText>
 
           {loading ? (
-            <ActivityIndicator size="large" color="#fff" style={{ marginTop: 20 }} />
+            <ActivityIndicator size="large" color="#fff" style={{ marginTop: verticalScale(20) }} />
           ) : filteredProducts.length > 0 ? (
             <View style={styles.grid}>
               {filteredProducts.map((item) => (
                 <TouchableOpacity
                   key={item.id}
-                  style={styles.card}
+                  style={[styles.card, { padding: scale(10), borderRadius: scale(10), marginVertical: verticalScale(5) }]}
                   onPress={() => router.push({ pathname: '/product', params: { id: item.id } })}
                 >
-                  {item.picture ? (
+                  {item.picture && (
                     <Image
                       source={{ uri: item.picture }}
-                      style={{ width: '100%', height: 100, borderRadius: 8, marginBottom: 8 }}
+                      style={{ width: '100%', height: verticalScale(100), borderRadius: scale(8), marginBottom: verticalScale(8) }}
                     />
-                  ) : null}
-                  <Text style={styles.cardTitle}>{item.name}</Text>
-                  <Text style={styles.cardPrice}>{item.price} BDT</Text>
-                  <Text style={{ color: '#888', fontSize: 12 }}>{item.category}</Text>
+                  )}
+                  <ScaledText size={14} style={styles.cardTitle}>{item.name}</ScaledText>
+                  <ScaledText size={12} style={styles.cardPrice}>{item.price} BDT</ScaledText>
+                  <ScaledText size={12} style={{ color: '#888' }}>{item.category}</ScaledText>
                 </TouchableOpacity>
               ))}
             </View>
           ) : (
-            <Text style={{ color: '#fff', marginTop: 20 }}>No products found</Text>
+            <ScaledText size={14} style={{ color: '#fff', marginTop: verticalScale(20) }}>No products found</ScaledText>
           )}
         </ScrollView>
 
         {/* Bottom Navigation */}
         <View style={styles.nav}>
           <TouchableOpacity onPress={() => router.push('/homepage')}>
-            <Ionicons name="home" size={28} color="#D50000" />
+            <Ionicons name="home" size={scaleFont(28)} color="#D50000" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/cart')}>
-            <Ionicons name="cart" size={28} color="gray" />
+            <Ionicons name="cart" size={scaleFont(28)} color="gray" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/profile')}>
-            <Ionicons name="person" size={28} color="gray" />
+            <Ionicons name="person" size={scaleFont(28)} color="gray" />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -226,93 +203,32 @@ export default function HomeScreen() {
   );
 }
 
-// STYLES REMAIN THE SAME
+// --- STYLES ---
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    paddingBottom: Platform.OS === 'ios' ? 120 : 100,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  logo: { color: 'white', fontSize: 28, fontWeight: 'bold' },
-  search: {
-    backgroundColor: '#FFF3E0',
-    padding: 10,
-    borderRadius: 15,
-    marginVertical: 15,
-    color: '#000',
-  },
-  dropdown: {
-    backgroundColor: '#FFF3E0',
-    padding: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ffd0b8',
-    marginTop: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  dropdownList: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#eee',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-    marginTop: 0,
-  },
-  dropdownItem: {
-    backgroundColor: '#fff',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f2f2f2',
-  },
-  dropdownItemSelected: {
-    backgroundColor: '#FFF7F3',
-  },
+  safeArea: { flex: 1, backgroundColor: '#D50000' },
+  scrollContainer: { padding: scale(20), paddingBottom: Platform.OS === 'ios' ? verticalScale(120) : verticalScale(100) },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  logo: { color: 'white', fontWeight: 'bold', textAlign: 'center', marginVertical: verticalScale(10) },
+  search: { backgroundColor: '#FFF3E0', color: '#000' },
+  dropdown: { backgroundColor: '#FFF3E0', alignItems: 'center', borderWidth: 1, borderColor: '#ffd0b8' },
+  dropdownList: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#eee' },
+  dropdownItem: { borderBottomWidth: 1, borderBottomColor: '#f2f2f2' },
+  dropdownItemSelected: { backgroundColor: '#FFF7F3' },
   dropdownItemText: { color: '#333' },
   dropdownItemTextSelected: { color: '#D50000', fontWeight: '700' },
-  dropdownButtonText: { color: '#333', fontWeight: '600', fontSize: 16 },
-  sectionTitle: { color: 'white', fontSize: 20, marginVertical: 10 },
+  dropdownButtonText: { color: '#333', fontWeight: '600' },
+  sectionTitle: { color: 'white', marginVertical: verticalScale(10) },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  card: {
-    backgroundColor: '#FFF3E0',
-    padding: 10,
-    borderRadius: 10,
-    width: '48%',
-    marginVertical: 5,
-  },
+  card: { backgroundColor: '#FFF3E0', width: '48%' },
   cardTitle: { fontWeight: 'bold' },
-  cardPrice: { color: 'gray', marginTop: 5 },
+  cardPrice: { color: 'gray', marginTop: verticalScale(5) },
   nav: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingTop: 12,
-    paddingBottom: Platform.OS === 'ios' ? 28 : 12,
-    borderTopWidth: 1,
-    borderColor: '#ddd',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    position: 'absolute', bottom: verticalScale(10), left: 0, right: 0,
+    backgroundColor: '#FFF3E0', flexDirection: 'row',
+    justifyContent: 'space-around', alignItems: 'center',
+    borderTopLeftRadius: scale(12), borderTopRightRadius: scale(12),
+    shadowColor: '#000', shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1, shadowRadius: 4, elevation: 5,
+    height: verticalScale(60),
   },
 });

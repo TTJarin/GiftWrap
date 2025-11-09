@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { db } from '../firebaseConfig';
+import { scale, verticalScale, scaleFont } from './scale'; // <- scaling
 
 // --- Types ---
 interface Reminder {
@@ -27,7 +28,7 @@ interface Reminder {
   userId: string;
 }
 
-export default function CalenderScreen() {
+export default function CalendarScreen() {
   const router = useRouter();
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [markedDates, setMarkedDates] = useState<{ [key: string]: any }>({});
@@ -119,20 +120,21 @@ export default function CalenderScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled">
-        <TouchableOpacity onPress={() => router.back()} style={styles.backWrapper}>
-          <Text style={styles.back}>{'< Back'}</Text>
+      <ScrollView contentContainerStyle={{ paddingBottom: verticalScale(120) }} keyboardShouldPersistTaps="handled">
+        {/* Back Arrow */}
+        <TouchableOpacity onPress={() => router.replace('/profile')} style={[styles.backWrapper, { top: verticalScale(65), left: scale(20) }]}>
+          <Ionicons name="arrow-back" size={scaleFont(28)} color="white" />
         </TouchableOpacity>
 
-        <Text style={styles.title}>My Calendar</Text>
+        <Text style={[styles.title, { fontSize: scaleFont(28), marginTop: verticalScale(60), marginBottom: verticalScale(20) }]}>My Calendar</Text>
 
         {/* Buttons */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.addButton} onPress={() => router.push('/date')}>
-            <Text style={styles.addButtonText}>+ Add Reminder</Text>
+        <View style={[styles.buttonContainer, { marginHorizontal: scale(20), marginBottom: verticalScale(16) }]}>
+          <TouchableOpacity style={[styles.addButton, { padding: verticalScale(12), borderRadius: scale(20), width: '45%' }]} onPress={() => router.push('/date')}>
+            <Text style={[styles.addButtonText, { fontSize: scaleFont(16) }]}>+ Add Reminder</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.savedButton} onPress={() => setShowSavedReminders(true)}>
-            <Text style={styles.addButtonText}>Saved Reminders</Text>
+          <TouchableOpacity style={[styles.savedButton, { padding: verticalScale(12), borderRadius: scale(20), width: '45%' }]} onPress={() => setShowSavedReminders(true)}>
+            <Text style={[styles.addButtonText, { fontSize: scaleFont(16) }]}>Saved Reminders</Text>
           </TouchableOpacity>
         </View>
 
@@ -144,27 +146,29 @@ export default function CalenderScreen() {
           }}
           onDayPress={day => setSelectedDate(day.dateString)}
           onMonthChange={month => { setViewYear(month.year); setViewMonth(month.month); }}
-          style={styles.calendar}
+          style={[styles.calendar, { marginHorizontal: scale(10), padding: scale(10), borderRadius: scale(10), marginBottom: verticalScale(20) }]}
           theme={{ todayTextColor: '#D50000', selectedDayBackgroundColor: '#D50000' }}
         />
 
         {loading ? (
-          <ActivityIndicator style={{ marginTop: 30 }} />
+          <ActivityIndicator style={{ marginTop: verticalScale(30) }} />
         ) : selectedDate ? (
           <View style={styles.reminderList}>
-            <Text style={styles.reminderTitle}>Reminders for {selectedDate}:</Text>
+            <Text style={[styles.reminderTitle, { fontSize: scaleFont(18), marginBottom: verticalScale(10), padding: verticalScale(10), borderRadius: scale(8) }]}>
+              Reminders for {selectedDate}:
+            </Text>
             {remindersForDate.length === 0 ? (
-              <Text style={styles.noReminders}>No reminders for this date.</Text>
+              <Text style={[styles.noReminders, { padding: verticalScale(10), borderRadius: scale(8), marginHorizontal: scale(10), marginTop: verticalScale(10) }]}>No reminders for this date.</Text>
             ) : (
               remindersForDate.map(rem => (
-                <View key={rem.id} style={styles.reminderBox}>
-                  <Text style={styles.reminderText}>{rem.title || 'Reminder'}</Text>
+                <View key={rem.id} style={[styles.reminderBox, { padding: verticalScale(12), borderRadius: scale(8), marginBottom: verticalScale(10) }]}>
+                  <Text style={[styles.reminderText, { fontSize: scaleFont(16) }]}>{rem.title || 'Reminder'}</Text>
                 </View>
               ))
             )}
           </View>
         ) : (
-          <Text style={styles.noReminders}>Select a date to view reminders.</Text>
+          <Text style={[styles.noReminders, { padding: verticalScale(10), borderRadius: scale(8), marginHorizontal: scale(10), marginTop: verticalScale(10) }]}>Select a date to view reminders.</Text>
         )}
       </ScrollView>
 
@@ -175,42 +179,42 @@ export default function CalenderScreen() {
         transparent={true}
         onRequestClose={() => setShowSavedReminders(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Saved Reminders</Text>
-            <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+        <View style={[styles.modalOverlay, { padding: scale(20) }]}>
+          <View style={[styles.modalContent, { borderRadius: scale(20), padding: scale(20) }]}>
+            <Text style={[styles.modalTitle, { fontSize: scaleFont(22), marginBottom: verticalScale(20) }]}>Saved Reminders</Text>
+            <ScrollView contentContainerStyle={{ paddingBottom: verticalScale(20) }}>
               {reminders.length === 0 ? (
-                <Text style={styles.noReminders}>No reminders yet.</Text>
+                <Text style={[styles.noReminders, { padding: verticalScale(10), borderRadius: scale(8), marginHorizontal: scale(10) }]}>No reminders yet.</Text>
               ) : (
                 reminders.map(rem => (
-                  <View key={rem.id} style={styles.reminderBoxRow}>
-                    <Text style={styles.reminderText}>
+                  <View key={rem.id} style={[styles.reminderBoxRow, { padding: verticalScale(12), borderRadius: scale(8), marginBottom: verticalScale(10) }]}>
+                    <Text style={[styles.reminderText, { fontSize: scaleFont(16) }]}>
                       {rem.title} - {rem.date || `${rem.day}/${rem.month}`}
                     </Text>
                     <TouchableOpacity onPress={() => handleDeleteReminder(rem.id)}>
-                      <Ionicons name="trash" size={24} color="#D50000" />
+                      <Ionicons name="trash" size={scaleFont(24)} color="#D50000" />
                     </TouchableOpacity>
                   </View>
                 ))
               )}
             </ScrollView>
-            <TouchableOpacity style={styles.closeButton} onPress={() => setShowSavedReminders(false)}>
-              <Text style={styles.closeButtonText}>Close</Text>
+            <TouchableOpacity style={[styles.closeButton, { padding: verticalScale(12), borderRadius: scale(20), marginTop: verticalScale(10) }]} onPress={() => setShowSavedReminders(false)}>
+              <Text style={[styles.closeButtonText, { fontSize: scaleFont(16) }]}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
       {/* Navigation bar */}
-      <View style={styles.nav}>
+      <View style={[styles.nav, { paddingVertical: verticalScale(12), borderTopLeftRadius: scale(15), borderTopRightRadius: scale(15) }]}>
         <TouchableOpacity onPress={() => router.push('/homepage')}>
-          <Ionicons name="home" size={28} color="#808080" />
+          <Ionicons name="home" size={scaleFont(28)} color="#808080" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.push('/cart')}>
-          <Ionicons name="cart" size={28} color="#808080" />
+          <Ionicons name="cart" size={scaleFont(28)} color="#808080" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.push('/profile')}>
-          <Ionicons name="person" size={28} color="gray" />
+          <Ionicons name="person" size={scaleFont(28)} color="gray" />
         </TouchableOpacity>
       </View>
     </View>
@@ -220,24 +224,23 @@ export default function CalenderScreen() {
 // --- Styles ---
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#D50000' },
-  backWrapper: { position: 'absolute', top: 30, left: 20, zIndex: 2 },
-  back: { color: 'white', fontSize: 16 },
-  title: { fontSize: 28, fontWeight: 'bold', color: 'white', marginBottom: 20, textAlign: 'center', marginTop: 60 },
-  buttonContainer: { flexDirection: 'row', justifyContent: 'space-around', marginHorizontal: 20, marginBottom: 16 },
-  addButton: { backgroundColor: '#FFF3E0', padding: 12, borderRadius: 20, alignItems: 'center', width: '45%' },
-  savedButton: { backgroundColor: '#FFF3E0', padding: 12, borderRadius: 20, alignItems: 'center', width: '45%' },
-  addButtonText: { color: '#D50000', fontWeight: 'bold', fontSize: 16 },
-  calendar: { borderRadius: 10, marginBottom: 20, backgroundColor: '#FFF3E0', marginHorizontal: 10, padding: 10 },
-  reminderList: { flex: 1, marginTop: 10, marginHorizontal: 10 },
-  reminderTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#D50000', backgroundColor: '#FFF3E0', padding: 10, borderRadius: 8, textAlign: 'center' },
-  noReminders: { color: '#888', textAlign: 'center', marginTop: 10, backgroundColor: '#FFF3E0', padding: 10, borderRadius: 8, marginHorizontal: 10 },
-  reminderBox: { backgroundColor: '#FFF3E0', borderRadius: 8, padding: 12, marginBottom: 10 },
-  reminderBoxRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#FFF3E0', borderRadius: 8, padding: 12, marginBottom: 10 },
-  reminderText: { color: '#333', fontSize: 16 },
-  nav: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#ffffff', flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12, borderTopWidth: 1, borderColor: '#ccc' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-  modalContent: { backgroundColor: '#D50000', borderRadius: 20, padding: 20, maxHeight: '80%' },
-  modalTitle: { color: 'white', fontSize: 22, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
-  closeButton: { backgroundColor: '#FFF3E0', padding: 12, borderRadius: 20, alignItems: 'center', marginTop: 10 },
-  closeButtonText: { color: '#D50000', fontWeight: 'bold', fontSize: 16, textAlign: 'center' },
+  backWrapper: { position: 'absolute', zIndex: 2 },
+  title: { fontWeight: 'bold', color: 'white', textAlign: 'center' },
+  buttonContainer: { flexDirection: 'row', justifyContent: 'space-around' },
+  addButton: { backgroundColor: '#FFF3E0', alignItems: 'center' },
+  savedButton: { backgroundColor: '#FFF3E0', alignItems: 'center' },
+  addButtonText: { color: '#D50000', fontWeight: 'bold' },
+  calendar: { backgroundColor: '#FFF3E0' },
+  reminderList: { flex: 1, marginTop: verticalScale(10) },
+  reminderTitle: { fontWeight: 'bold', color: '#D50000', textAlign: 'center', backgroundColor: '#FFF3E0' },
+  noReminders: { color: '#888', textAlign: 'center', backgroundColor: '#FFF3E0' },
+  reminderBox: { backgroundColor: '#FFF3E0' },
+  reminderBoxRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#FFF3E0' },
+  reminderText: { color: '#333' },
+  nav: { position: 'absolute', bottom: verticalScale(30), left: 0, right: 0, backgroundColor: '#fff', flexDirection: 'row', justifyContent: 'space-around', borderTopWidth: 1, borderColor: '#ccc' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center' },
+  modalContent: { backgroundColor: '#D50000', maxHeight: '80%' },
+  modalTitle: { color: 'white', fontWeight: 'bold', textAlign: 'center' },
+  closeButton: { backgroundColor: '#FFF3E0', alignItems: 'center' },
+  closeButtonText: { color: '#D50000', fontWeight: 'bold', textAlign: 'center' },
 });

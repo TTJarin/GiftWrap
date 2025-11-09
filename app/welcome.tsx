@@ -1,61 +1,47 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import ScaledText from './components/ScaledText';
+import ScaledButton from './components/ScaledButton';
+import { spacing } from './theme';
+import { scale, verticalScale, scaleFont } from './scale';
 
 export default function Welcome() {
   const router = useRouter();
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.logo}>GiftWrap</Text>
+    <View style={{ flex: 1, backgroundColor: '#D50000', justifyContent: 'center', alignItems: 'center', padding: scale(20) }}>
+      <ScaledText size={36} style={{ fontWeight: 'bold', color: '#fff', marginBottom: verticalScale(50) }}>
+        GiftWrap
+      </ScaledText>
 
-      <TouchableOpacity
-        style={styles.button}
+      <ScaledButton
+        title="Login Account"
         onPress={() => router.push('/login')}
-      >
-        <Text style={styles.buttonText}>Login Account</Text>
-      </TouchableOpacity>
+        style={{
+          backgroundColor: '#FFF3E0',
+          width: '80%',
+          paddingVertical: verticalScale(16),
+          borderRadius: scale(15),
+          marginBottom: verticalScale(20),
+          alignItems: 'center',
+        }}
+        textStyle={{ color: '#D50000', fontWeight: 'bold' }}
+      />
 
-      <TouchableOpacity
-        style={styles.button}
+      <ScaledButton
+        title="Create Account"
         onPress={() => router.push('/register')}
-      >
-        <Text style={styles.buttonText}>Create Account</Text>
-      </TouchableOpacity>
+        style={{
+          backgroundColor: '#FFF3E0',
+          width: '80%',
+          paddingVertical: verticalScale(16),
+          borderRadius: scale(15),
+          marginBottom: verticalScale(20),
+          alignItems: 'center',
+        }}
+        textStyle={{ color: '#D50000', fontWeight: 'bold' }}
+      />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#D50000',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  logo: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 50,
-  },
-  button: {
-    width: '80%',
-    backgroundColor: '#FFF3E0',
-    paddingVertical: 16,
-    borderRadius: 15,
-    marginBottom: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  buttonText: {
-    color: '#D50000',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-});

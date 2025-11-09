@@ -6,16 +6,17 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
-  SafeAreaView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { db } from '../firebaseConfig';
+import { scale, scaleFont, verticalScale } from './scale';
 
-// --- Define a User interface ---
 interface User {
   name: string;
   email: string;
@@ -24,7 +25,7 @@ interface User {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null); // typed user state
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -64,7 +65,6 @@ export default function ProfileScreen() {
     fetchUser();
   }, []);
 
-  const handleBack = () => router.replace('/homepage');
   const logout = () => router.replace('/welcome');
 
   const navigateTo = (item: string) => {
@@ -73,17 +73,23 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={styles.wrapper}>
-      <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <TouchableOpacity onPress={handleBack} style={styles.backWrapper}>
-            <Text style={styles.back}>{'< Back'}</Text>
-          </TouchableOpacity>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+      <View style={styles.wrapper}>
+        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          {/* Header */}
+          <View style={styles.headerRow}>
+            <Text style={styles.headerTitle}>Profile</Text>
+          </View>
 
-          <Image source={require('../assets/images/profile-user.png')} style={styles.avatar} />
+          {/* Avatar */}
+          <Image
+            source={require('../assets/images/profile-user.png')}
+            style={styles.avatar}
+          />
 
+          {/* User Info */}
           {loading ? (
-            <ActivityIndicator size="large" color="#fff" style={{ marginVertical: 30 }} />
+            <ActivityIndicator size="large" color="#fff" style={{ marginVertical: verticalScale(30) }} />
           ) : user ? (
             <>
               <Text style={styles.name}>{user.name || 'No Name'}</Text>
@@ -91,47 +97,96 @@ export default function ProfileScreen() {
               <Text style={styles.phone}>{user.phone || 'No Phone'}</Text>
             </>
           ) : (
-            <Text style={{ color: 'white', marginVertical: 30 }}>No user info found.</Text>
+            <Text style={{ color: 'white', marginVertical: verticalScale(30) }}>No user info found.</Text>
           )}
 
+          {/* Buttons */}
           {['My Orders', 'Calendar'].map((item: string, index: number) => (
             <TouchableOpacity key={index} style={styles.button} onPress={() => navigateTo(item)}>
-              <Text>{item}</Text>
+              <Text style={{ fontSize: scaleFont(16) }}>{item}</Text>
             </TouchableOpacity>
           ))}
 
+          {/* Logout */}
           <TouchableOpacity style={styles.button} onPress={logout}>
-            <Text style={{ color: 'red', fontWeight: 'bold' }}>Log out</Text>
+            <Text style={{ color: 'red', fontWeight: 'bold', fontSize: scaleFont(16) }}>Log out</Text>
           </TouchableOpacity>
         </ScrollView>
-      </SafeAreaView>
 
-      <View style={styles.nav}>
-        <TouchableOpacity onPress={() => router.push('/homepage')}>
-          <Ionicons name="home" size={28} color="#808080" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push('/cart')}>
-          <Ionicons name="cart" size={28} color="#808080" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push('/profile')}>
-          <Ionicons name="person" size={28} color="#D50000" />
-        </TouchableOpacity>
+        {/* Bottom Navigation */}
+        <View style={styles.nav}>
+          <TouchableOpacity onPress={() => router.push('/homepage')}>
+            <Ionicons name="home" size={scaleFont(28)} color="#808080" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/cart')}>
+            <Ionicons name="cart" size={scaleFont(28)} color="#808080" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/profile')}>
+            <Ionicons name="person" size={scaleFont(28)} color="#D50000" />
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
-// --- Styles remain unchanged ---
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#D50000',
+  },
   wrapper: { flex: 1, backgroundColor: '#D50000' },
-  safeArea: { flex: 1 },
-  scrollContainer: { alignItems: 'center', paddingTop: 60, paddingBottom: 100, paddingHorizontal: 20 },
-  avatar: { width: 150, height: 150, borderRadius: 60 },
-  backWrapper: { position: 'absolute', top: 30, left: 20 },
-  back: { color: 'white', fontSize: 16 },
-  name: { color: 'white', fontSize: 22, fontWeight: 'bold', marginTop: 40 },
-  email: { color: 'white', fontSize: 16, marginTop: 5 },
-  phone: { color: 'white', fontSize: 16, marginBottom: 20 },
-  button: { backgroundColor: '#FFF3E0', padding: 12, width: '80%', borderRadius: 10, marginTop: 10, alignItems: 'center' },
-  nav: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12, borderTopWidth: 1, borderColor: '#ccc' },
+  scrollContainer: { 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    paddingTop: verticalScale(20), 
+    paddingBottom: verticalScale(100), 
+    paddingHorizontal: scale(20),
+  },
+  headerRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    width: '100%', 
+    marginBottom: verticalScale(20), 
+    position: 'relative',
+  },
+  headerTitle: { 
+    color: 'white', 
+    fontSize: scaleFont(22), 
+    fontWeight: 'bold', 
+    position: 'absolute', 
+    left: 0, 
+    right: 0, 
+    textAlign: 'center',
+  },
+  avatar: { 
+    width: scale(150), 
+    height: verticalScale(150), 
+    borderRadius: scale(75), 
+    backgroundColor: 'white',
+    padding: scale(10),
+  },
+  name: { color: 'white', fontSize: scaleFont(22), fontWeight: 'bold', marginTop: verticalScale(20) },
+  email: { color: 'white', fontSize: scaleFont(16), marginTop: verticalScale(5) },
+  phone: { color: 'white', fontSize: scaleFont(16), marginBottom: verticalScale(20) },
+  button: { 
+    backgroundColor: '#FFF3E0', 
+    padding: verticalScale(12), 
+    width: '80%', 
+    borderRadius: scale(10), 
+    marginTop: verticalScale(10), 
+    alignItems: 'center',
+  },
+  nav: { 
+    backgroundColor: '#fff', 
+    flexDirection: 'row', 
+    justifyContent: 'space-around', 
+    alignItems: 'center',
+    paddingVertical: verticalScale(12), 
+    borderTopWidth: 1, 
+    borderColor: '#ccc',
+    borderTopLeftRadius: scale(15),
+    borderTopRightRadius: scale(15),
+    marginBottom: Platform.OS === 'ios' ? verticalScale(10) : verticalScale(20),
+  },
 });
