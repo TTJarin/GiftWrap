@@ -5,7 +5,12 @@ import MyTabBar from './MyTabBar';
 
 export default function RootLayout() {
   const pathname = usePathname();
-  const hideTabBar = pathname === '/' || pathname === '/welcome';
+  const hideTabBar = pathname === '/' || 
+                    pathname === '/welcome' || 
+                    pathname === '/login' || 
+                    pathname === '/register' || 
+                    pathname === '/verify-email' || 
+                    pathname.startsWith('/admin');
 
   return (
     <SafeAreaProvider>

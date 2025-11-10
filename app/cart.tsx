@@ -50,7 +50,7 @@ export default function Cart() {
       return;
     }
 
-    // ✅ FIXED LINE: used backticks instead of slashes
+    
     router.push(`/purchase?cart=${encodeURIComponent(JSON.stringify(checkedItems))}`);
 
     try {

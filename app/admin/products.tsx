@@ -1,17 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import {
-  Alert,
-  FlatList,
-  Image,
-  Modal,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  ScrollView,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import {
   addDoc,
@@ -21,11 +9,23 @@ import {
   getDocs,
   updateDoc,
 } from 'firebase/firestore';
-import * as ImagePicker from 'expo-image-picker';
+import React, { useEffect, useState } from 'react';
+import {
+  Alert,
+  FlatList,
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { db } from '../../firebaseConfig';
 import { getFileURL, uploadFile } from '../lib/appwrite.config';
 
-// ✅ Define types for data models
+// Define types for data models
 type Product = {
   id?: string;
   name: string;
@@ -42,7 +42,7 @@ type Filter = {
 export default function AdminProducts() {
   const router = useRouter();
 
-  // ✅ Typed states
+  // Typed states
   const [products, setProducts] = useState<Product[]>([]);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
@@ -53,7 +53,7 @@ export default function AdminProducts() {
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // ✅ Fetch products
+  // Fetch products
   const fetchProducts = async (): Promise<void> => {
     try {
       const querySnapshot = await getDocs(collection(db, 'products'));
@@ -68,7 +68,7 @@ export default function AdminProducts() {
     }
   };
 
-  // ✅ Fetch filters
+  // Fetch filters
   const fetchFilters = async (): Promise<void> => {
     try {
       const snap = await getDocs(collection(db, 'filters'));
@@ -88,7 +88,7 @@ export default function AdminProducts() {
     fetchFilters();
   }, []);
 
-  // ✅ Image picker
+  // Image picker
   const selectMultipleImages = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
@@ -97,9 +97,12 @@ export default function AdminProducts() {
     }
     const result = await ImagePicker.launchImageLibraryAsync({
       allowsMultipleSelection: true,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
     });
     if (!result.canceled && result.assets.length > 0) {
-      setProductsImages(result.assets.map((a) => a.uri));
+      const uris = result.assets.map((asset) => asset.uri);
+      setProductsImages(uris);
     }
   };
 
@@ -108,18 +111,30 @@ export default function AdminProducts() {
   };
 
   const uploadAllImages = async (): Promise<{ products: string[] }> => {
-    const productsRes: string[] = [];
-    for (let i = 0; i < productsImages.length; i++) {
-      const file = await uploadFile(
-        productsImages[i],
-        `products_${Date.now()}_${i}.jpg`
-      );
-      productsRes.push(getFileURL(file.$id));
+    try {
+      const productsRes: string[] = [];
+      for (let i = 0; i < productsImages.length; i++) {
+        const timestamp = Date.now();
+        const fileName = `product_${timestamp}_${i}.jpg`;
+        console.log('Uploading image:', fileName);
+        
+        const file = await uploadFile(productsImages[i], fileName);
+        if (file && file.$id) {
+          const fileUrl = getFileURL(file.$id);
+          productsRes.push(fileUrl);
+          console.log('Successfully uploaded:', fileName);
+        } else {
+          console.error('Upload failed for:', fileName);
+        }
+      }
+      return { products: productsRes };
+    } catch (error) {
+      console.error('Error in uploadAllImages:', error);
+      throw error;
     }
-    return { products: productsRes };
   };
 
-  // ✅ Add or update product
+  // Add or update product
   const handleSave = async (): Promise<void> => {
     if (!name || !price || productsImages.length === 0 || !category) {
       Alert.alert('Error', 'Please fill all fields');
@@ -163,7 +178,7 @@ export default function AdminProducts() {
     fetchProducts();
   };
 
-  // ✅ Edit product
+  //  Edit product
   const handleEdit = (product: Product) => {
     setEditingId(product.id ?? null);
     setName(product.name);
@@ -172,13 +187,13 @@ export default function AdminProducts() {
     setCategory(product.category);
   };
 
-  // ✅ Delete product
+  // Delete product
   const handleDelete = async (id: string) => {
     await deleteDoc(doc(db, 'products', id));
     fetchProducts();
   };
 
-  // ✅ UI
+  // UI
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>

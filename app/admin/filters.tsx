@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, FlatList, Alert, StyleSheet, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  FlatList,
+  Alert,
+  StyleSheet,
+  ActivityIndicator,
+  Platform,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { collection, addDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
@@ -25,7 +35,9 @@ export default function AdminFilters() {
     }
   };
 
-  useEffect(() => { fetchFilters(); }, []);
+  useEffect(() => {
+    fetchFilters();
+  }, []);
 
   const handleAdd = async () => {
     if (!filterName.trim()) return Alert.alert('Error', 'Enter a filter name');
@@ -41,12 +53,59 @@ export default function AdminFilters() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, filterName: string) => {
     try {
-      await deleteDoc(doc(db, 'filters', id));
+      setLoading(true);
+      console.log('Starting delete process for filter:', filterName, 'with ID:', id);
+
+      // Check if any products are using this filter
+      const productsSnapshot = await getDocs(collection(db, 'products'));
+      const productsUsingFilter = productsSnapshot.docs.filter(doc =>
+        doc.data().category === filterName
+      );
+
+      if (productsUsingFilter.length > 0) {
+        Alert.alert(
+          'Cannot Delete Filter',
+          `This filter is being used by ${productsUsingFilter.length} product(s). Please remove the filter from all products first.`
+        );
+        return;
+      }
+
+      console.log('No products using this filter, proceeding with deletion...');
+
+      const filterRef = doc(db, 'filters', id);
+      await deleteDoc(filterRef);
+
+      console.log('Filter deleted successfully');
+      Alert.alert('Success', 'Filter deleted successfully');
       fetchFilters();
-    } catch (error) {
-      Alert.alert('Error', 'Failed to delete filter');
+    } catch (error: any) {
+      console.error('Full error object:', error);
+      Alert.alert('Error', `Failed to delete filter: ${error.message || 'Unknown error'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmDelete = (id: string, name: string) => {
+    if (Platform.OS === 'web') {
+      // ✅ Web-safe confirmation
+      const confirmed = window.confirm(
+        `Are you sure you want to delete "${name}"?\nThis cannot be undone.`
+      );
+      if (confirmed) handleDelete(id, name);
+    } else {
+      // ✅ Native mobile alert
+      Alert.alert(
+        'Confirm Delete',
+        `Are you sure you want to delete "${name}"?\nThis cannot be undone.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Delete', style: 'destructive', onPress: () => handleDelete(id, name) },
+        ],
+        { cancelable: true }
+      );
     }
   };
 
@@ -84,19 +143,23 @@ export default function AdminFilters() {
             <View style={styles.filterItem}>
               <Text style={styles.filterName}>{item.name}</Text>
               <TouchableOpacity
-                onPress={() =>
-                  Alert.alert('Confirm Delete', `Delete "${item.name}"?`, [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Delete', style: 'destructive', onPress: () => handleDelete(item.id) },
-                  ])
-                }
+                onPress={() => {
+                  if (!item.id) {
+                    console.error('No item ID found for deletion');
+                    Alert.alert('Error', 'Cannot delete filter: Invalid ID');
+                    return;
+                  }
+                  confirmDelete(item.id, item.name);
+                }}
                 style={styles.deleteBtn}
               >
                 <Text style={styles.deleteText}>Delete</Text>
               </TouchableOpacity>
             </View>
           )}
-          ListEmptyComponent={<Text style={{ textAlign: 'center', marginTop: 30 }}>No filters found.</Text>}
+          ListEmptyComponent={
+            <Text style={{ textAlign: 'center', marginTop: 30 }}>No filters found.</Text>
+          }
         />
       )}
     </View>

@@ -148,7 +148,6 @@ export default function MyDatesScreen() {
             </TouchableOpacity>
           </ScrollView>
 
-          {/* Custom Bottom Nav */}
         </SafeAreaView>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>

@@ -162,7 +162,6 @@ export default function ProductScreen() {
   );
 }
 
-// --- Bottom navigation ---
 
 
 const LoadingScreen = () => (
